@@ -41,3 +41,4 @@ Resposta:
 ```
 
 A chave de API fica somente no servidor e nunca deve ser exposta no navegador ou commitada no repositório.
+
