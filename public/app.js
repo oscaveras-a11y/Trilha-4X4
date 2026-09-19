@@ -44,15 +44,10 @@ function abrirFuncao(page) {
       abrirMapa();
       break;
 
-    case 'criar-trilha':
-      abrirMapa();
-
-      alert(
-        '🏁 Criador de trilhas\n\n' +
-        'Na próxima etapa vamos adicionar a gravação do percurso.'
-      );
-
-      break;
+   case 'criar-trilha':
+  abrirMapa();
+  break;
+      
 
     case 'trilhas':
       alert('🛣️ A lista de trilhas será criada aqui.');
