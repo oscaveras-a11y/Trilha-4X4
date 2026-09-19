@@ -17,7 +17,10 @@ const openai = new OpenAI({
 app.use(express.json({ limit: '32kb' }));
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    projeto: 'Trilha-4X4'
+  });
 });
 
 app.post('/api/chat', async (req, res) => {
