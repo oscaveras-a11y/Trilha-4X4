@@ -1,6 +1,7 @@
 let mapa = null;
 let marcadorUsuario = null;
 let precisaoUsuario = null;
+let sosAtivo = false;
 
 document.addEventListener('DOMContentLoaded', () => {
 
