@@ -54,7 +54,4 @@ app.listen(port, () => {
   console.log(`Servidor do Trilha-4X4 rodando em http://localhost:${port}`);
 });
 
-env 
-OPENAI_API_KEY=grama
-OPENAI_MODEL=gpt-4o-mini
-PORT=3000
+
