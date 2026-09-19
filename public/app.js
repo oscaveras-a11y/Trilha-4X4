@@ -3,16 +3,29 @@ let marcadorUsuario = null;
 let precisaoUsuario = null;
 let sosAtivo = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+  const locationButton = document.getElementById('locationButton');
 
-  document.querySelectorAll('.menu-card').forEach(card => {
+  if (locationButton) {
 
-    card.addEventListener('click', () => {
-      abrirFuncao(card.dataset.page);
-    });
+    locationButton.addEventListener(
+      'click',
+      solicitarLocalizacao
+    );
 
-  });
+  }
 
+  const sosButton = document.getElementById('sosButton');
+
+  if (sosButton) {
+
+    sosButton.addEventListener(
+      'click',
+      ativarSOS
+    );
+
+  }
+
+});
   const loginButton = document.getElementById('loginButton');
 
   if (loginButton) {
