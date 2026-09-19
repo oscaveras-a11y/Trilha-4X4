@@ -1,139 +1,280 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const cards = document.querySelectorAll('.menu-card');
+let mapa = null;
+let marcadorUsuario = null;
+let precisaoUsuario = null;
 
-  cards.forEach((card) => {
+document.addEventListener('DOMContentLoaded', () => {
+
+  document.querySelectorAll('.menu-card').forEach(card => {
+
     card.addEventListener('click', () => {
-      const page = card.dataset.page;
-      abrirFuncao(page);
+      abrirFuncao(card.dataset.page);
     });
+
   });
 
   const loginButton = document.getElementById('loginButton');
 
   if (loginButton) {
+
     loginButton.addEventListener('click', () => {
       alert('Área de login será criada na próxima etapa.');
     });
+
   }
 
   const locationButton = document.getElementById('locationButton');
 
   if (locationButton) {
-    locationButton.addEventListener('click', solicitarLocalizacao);
+
+    locationButton.addEventListener(
+      'click',
+      solicitarLocalizacao
+    );
+
   }
+
 });
 
+
 function abrirFuncao(page) {
+
   switch (page) {
+
     case 'mapa':
-      alert('🗺️ Mapa do Trilha-4X4 será aberto aqui.');
-      break;
-
-    case 'trilhas':
-      alert('🛣️ Lista de trilhas será aberta aqui.');
-      break;
-
-    case 'navegacao':
-      alert('🧭 Sistema de navegação será aberto aqui.');
-      break;
-
-    case 'ia':
-      alert('🤖 Assistente IA 4x4 será aberto aqui.');
-      break;
-
-    case 'grupos':
-      alert('👥 Área de grupos será aberta aqui.');
-      break;
-
-    case 'seguranca':
-      alert('🚨 Sistema de segurança será aberto aqui.');
+      abrirMapa();
       break;
 
     case 'criar-trilha':
-      alert('🏁 Criador de trilhas será aberto aqui.');
+      abrirMapa();
+
+      alert(
+        '🏁 Criador de trilhas\n\n' +
+        'Na próxima etapa vamos adicionar a gravação do percurso.'
+      );
+
+      break;
+
+    case 'trilhas':
+      alert('🛣️ A lista de trilhas será criada aqui.');
+      break;
+
+    case 'navegacao':
+      alert('🧭 A navegação será criada aqui.');
+      break;
+
+    case 'ia':
+      alert('🤖 O assistente IA 4x4 será aberto aqui.');
+      break;
+
+    case 'grupos':
+      alert('👥 Os grupos serão criados aqui.');
+      break;
+
+    case 'seguranca':
+      alert('🚨 A área de segurança será criada aqui.');
       break;
 
     case 'meu-4x4':
-      alert('🚙 Cadastro do seu 4x4 será aberto aqui.');
+      alert('🚙 O cadastro do seu 4x4 será criado aqui.');
       break;
 
-    default:
-      console.log('Função não encontrada:', page);
   }
+
 }
 
+
+function abrirMapa() {
+
+  const elementoMapa = document.getElementById('mapa');
+
+  if (!elementoMapa) {
+
+    alert('Mapa não encontrado.');
+
+    return;
+
+  }
+
+  elementoMapa.style.display = 'block';
+
+  if (mapa) {
+
+    mapa.invalidateSize();
+
+    return;
+
+  }
+
+  mapa = L.map('mapa');
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: '&copy; OpenStreetMap'
+    }
+  ).addTo(mapa);
+
+  mapa.setView(
+    [-28.2975, -51.7875],
+    13
+  );
+
+  solicitarLocalizacao();
+
+}
+
+
 function solicitarLocalizacao() {
+
   const botao = document.getElementById('locationButton');
-  const caixa = document.getElementById('locationBox');
 
   if (!navigator.geolocation) {
-    alert('Seu dispositivo não suporta localização GPS.');
+
+    alert(
+      'Seu dispositivo não suporta localização GPS.'
+    );
+
     return;
+
   }
 
   if (botao) {
-    botao.textContent = 'Obtendo localização...';
+
+    botao.textContent =
+      'Obtendo localização...';
+
     botao.disabled = true;
+
   }
 
   navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      const precisao = Math.round(position.coords.accuracy);
 
-      console.log('Latitude:', latitude);
-      console.log('Longitude:', longitude);
-      console.log('Precisão:', precisao);
+    function(position) {
 
-      if (caixa) {
-        caixa.innerHTML = `
-          <div class="location-icon">
-            📍
-          </div>
+      const latitude =
+        position.coords.latitude;
 
-          <div class="location-text">
-            <strong>
-              Localização ativada
-            </strong>
+      const longitude =
+        position.coords.longitude;
 
-            <p>
-              GPS ativo. Precisão aproximada:
-              ${precisao} metros.
-            </p>
-          </div>
+      const precisao =
+        position.coords.accuracy;
 
-          <button
-            id="locationButton"
-            class="location-button"
-          >
-            Localização ativa
-          </button>
-        `;
+      const posicao =
+        [latitude, longitude];
+
+
+      console.log(
+        'Localização:',
+        latitude,
+        longitude
+      );
+
+
+      if (!mapa) {
+        abrirMapa();
       }
-    },
 
-    function (error) {
-      console.error('Erro de localização:', error);
+
+      mapa.setView(
+        posicao,
+        16
+      );
+
+
+      if (!marcadorUsuario) {
+
+        marcadorUsuario =
+          L.marker(posicao)
+            .addTo(mapa)
+            .bindPopup(
+              '📍 Você está aqui!'
+            );
+
+      } else {
+
+        marcadorUsuario.setLatLng(
+          posicao
+        );
+
+      }
+
+
+      if (!precisaoUsuario) {
+
+        precisaoUsuario =
+          L.circle(
+            posicao,
+            {
+              radius: precisao
+            }
+          ).addTo(mapa);
+
+      } else {
+
+        precisaoUsuario.setLatLng(
+          posicao
+        );
+
+        precisaoUsuario.setRadius(
+          precisao
+        );
+
+      }
+
 
       if (botao) {
+
+        botao.textContent =
+          '📍 Localização ativa';
+
         botao.disabled = false;
-        botao.textContent = 'Permitir localização';
+
       }
 
-      if (error.code === 1) {
-        alert('Você recusou a permissão de localização. Para usar mapas e navegação, permita o acesso à localização.');
-      } else if (error.code === 2) {
-        alert('Não foi possível encontrar sua localização.');
-      } else if (error.code === 3) {
-        alert('A localização demorou muito para responder. Tente novamente.');
-      }
     },
+
+
+    function(error) {
+
+      console.error(error);
+
+      if (botao) {
+
+        botao.textContent =
+          'Permitir localização';
+
+        botao.disabled = false;
+
+      }
+
+
+      if (error.code === 1) {
+
+        alert(
+          '📍 Permissão de localização recusada.\n\n' +
+          'Permita o acesso à localização para utilizar o mapa.'
+        );
+
+      }
+
+      else {
+
+        alert(
+          'Não foi possível obter sua localização.'
+        );
+
+      }
+
+    },
+
 
     {
       enableHighAccuracy: true,
       timeout: 15000,
       maximumAge: 5000
     }
+
   );
+
 }
