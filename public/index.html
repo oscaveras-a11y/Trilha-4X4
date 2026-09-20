@@ -69,6 +69,8 @@
 
 
     <section class="hero" id="homeHero">
+      <div class="hero-brand">⛰️<strong>TRILHA <span>4X4</span></strong></div>
+      <div class="hero-actions"><button type="button">🔔</button><button type="button" id="heroProfile">👤</button></div>
 
       <h1>
         Seu mundo 4x4 começa aqui.
@@ -88,8 +90,7 @@
   data-page="entrar-trilha"
 >
 
-  <div class="card-icon">
-    🔑
+  <div class="card-icon">🔑
   </div>
 
   <div>
@@ -102,7 +103,7 @@
       Digite o ID da trilha recebido do administrador.
     </p>
 
-  </div>
+  </div><span class="card-arrow">›</span>
 
 </button>
 
@@ -111,8 +112,7 @@
         data-page="mapa"
       >
 
-        <div class="card-icon">
-          🗺️
+        <div class="card-icon">🗺️
         </div>
 
         <div>
@@ -125,7 +125,7 @@
             Explore o mapa e encontre sua localização.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -135,8 +135,7 @@
         data-page="trilhas"
       >
 
-        <div class="card-icon">
-          🛣️
+        <div class="card-icon">🛣️
         </div>
 
         <div>
@@ -149,7 +148,7 @@
             Encontre trilhas e passeios 4x4.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -159,8 +158,7 @@
         data-page="navegacao"
       >
 
-        <div class="card-icon">
-          🧭
+        <div class="card-icon">🧭
         </div>
 
         <div>
@@ -173,7 +171,7 @@
             Siga seu percurso durante a aventura.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -183,8 +181,7 @@
         data-page="ia"
       >
 
-        <div class="card-icon">
-          🤖
+        <div class="card-icon">🤖
         </div>
 
         <div>
@@ -197,7 +194,7 @@
             Converse com o assistente do Trilha-4X4.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -207,8 +204,7 @@
         data-page="grupos"
       >
 
-        <div class="card-icon">
-          👥
+        <div class="card-icon">👥
         </div>
 
         <div>
@@ -221,7 +217,7 @@
             Faça trilhas e passeios com outras pessoas.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -231,8 +227,7 @@
         data-page="seguranca"
       >
 
-        <div class="card-icon">
-          🚨
+        <div class="card-icon">🚨
         </div>
 
         <div>
@@ -245,7 +240,7 @@
             Recursos de segurança para suas aventuras.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -255,8 +250,7 @@
         data-page="criar-trilha"
       >
 
-        <div class="card-icon">
-          🏁
+        <div class="card-icon">🏁
         </div>
 
         <div>
@@ -269,7 +263,7 @@
             Grave sua rota ou desenhe uma no mapa.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -279,8 +273,7 @@
         data-page="meu-4x4"
       >
 
-        <div class="card-icon">
-          🚙
+        <div class="card-icon">🚙
         </div>
 
         <div>
@@ -293,7 +286,7 @@
             Cadastre e personalize seu veículo.
           </p>
 
-        </div>
+        </div><span class="card-arrow">›</span>
 
       </button>
 
@@ -418,6 +411,12 @@
 
 
   </main>
+
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="active" data-bottom-page="home"><span>⌂</span>Início</button>
+    <button type="button" data-bottom-page="mapa"><span>🗺</span>Mapa</button>
+    <button type="button" data-bottom-page="perfil"><span>●</span>Perfil</button>
+  </nav>
 
 
   <footer>
