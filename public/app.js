@@ -1416,6 +1416,12 @@ Você é o administrador desta trilha.`
         );
 
         overlay.remove();
+
+        if (dados.trail?.id) {
+          window.location.href =
+            '/trilha.html?id=' +
+            encodeURIComponent(dados.trail.id);
+        }
       } catch (error) {
         console.error(error);
 
