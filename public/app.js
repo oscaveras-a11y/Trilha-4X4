@@ -761,6 +761,42 @@ async function editarGrupo(groupId, nomeAtual) {
   }
 }
 
+async function alterarFuncaoMembroGrupo(groupId, userId, role) {
+  const texto = role === 'admin' ? 'promover este amigo a administrador' : 'tornar este administrador um participante';
+  if (!confirm('Deseja ' + texto + '?')) return;
+
+  const resposta = await fetch(
+    '/api/grupos/' + encodeURIComponent(groupId) + '/membros/' + encodeURIComponent(userId),
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    }
+  );
+  const dados = await resposta.json();
+  if (!resposta.ok) {
+    alert(dados.error || 'Não foi possível alterar o participante.');
+    return;
+  }
+  document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+  abrirDetalhesGrupo(groupId);
+}
+
+async function removerMembroGrupo(groupId, userId, name) {
+  if (!confirm('Remover ' + name + ' do grupo?')) return;
+  const resposta = await fetch(
+    '/api/grupos/' + encodeURIComponent(groupId) + '/membros/' + encodeURIComponent(userId),
+    { method: 'DELETE' }
+  );
+  const dados = await resposta.json();
+  if (!resposta.ok) {
+    alert(dados.error || 'Não foi possível remover o participante.');
+    return;
+  }
+  document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+  abrirDetalhesGrupo(groupId);
+}
+
 async function responderRoleGrupo(groupId, outingId, response) {
   try {
     const resposta = await fetch(
@@ -828,13 +864,23 @@ async function abrirDetalhesGrupo(groupId) {
         ` : ''}
         <h3>👥 Participantes</h3>
         <div>
-          ${(grupo.members || []).map((m) =>
-            '<div style="padding:10px 0;border-bottom:1px solid #ddd;"><strong>' +
-            escaparTextoTrilha(m.name) + '</strong> · ' +
-            (m.role === 'admin' ? 'Administrador' : 'Participante') +
-            '</div>'
-          ).join('') || '<p>Nenhum participante.</p>'}
+          ${(grupo.members || []).map((m) => `
+            <div style="padding:10px 0;border-bottom:1px solid #ddd;">
+              <strong>${escaparTextoTrilha(m.name)}</strong> ·
+              ${m.role === 'admin' ? 'Administrador' : 'Participante'}
+              ${grupo.role === 'admin' ? `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;">
+                  <button type="button" onclick="alterarFuncaoMembroGrupo('${grupo.id}','${m.id}','${m.role === 'admin' ? 'member' : 'admin'}')">
+                    ${m.role === 'admin' ? 'Tornar participante' : '⭐ Tornar administrador'}
+                  </button>
+                  <button type="button" onclick="removerMembroGrupo('${grupo.id}','${m.id}','${escaparTextoTrilha(m.name)}')">Remover</button>
+                </div>
+              ` : ''}
+            </div>
+          `).join('') || '<p>Nenhum participante.</p>'}
         </div>
+
+        <button id="sairDoGrupo" type="button" style="margin-top:12px;">🚪 Sair do grupo</button>
 
         <h3 style="margin-top:22px;">🗓️ Próximos rolês</h3>
         <div>
@@ -898,6 +944,18 @@ async function abrirDetalhesGrupo(groupId) {
     }
 
     document.getElementById('voltarListaGrupos').onclick = () => {
+      overlay.remove();
+      abrirGrupos();
+    };
+
+    document.getElementById('sairDoGrupo').onclick = async () => {
+      if (!confirm('Tem certeza que deseja sair deste grupo?')) return;
+      const respostaSair = await fetch('/api/grupos/' + encodeURIComponent(groupId) + '/sair', { method: 'DELETE' });
+      const dadosSair = await respostaSair.json();
+      if (!respostaSair.ok) {
+        alert(dadosSair.error || 'Não foi possível sair do grupo.');
+        return;
+      }
       overlay.remove();
       abrirGrupos();
     };
