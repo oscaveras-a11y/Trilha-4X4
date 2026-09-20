@@ -14,9 +14,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('.menu-card').forEach((card) => {
     card.addEventListener('click', () => {
-      abrirFuncao(card.dataset.page);
+      navegarParaModulo(card.dataset.page);
     });
   });
+
+  document.querySelectorAll('[data-bottom-page]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const page = button.dataset.bottomPage;
+      if (page === 'home') {
+        history.pushState({}, '', '/');
+        mostrarHome();
+      } else if (page === 'perfil') {
+        document.getElementById('avatarUsuario')?.click();
+      } else {
+        navegarParaModulo(page);
+      }
+    });
+  });
+
+  document.getElementById('heroProfile')?.addEventListener('click', () => {
+    document.getElementById('avatarUsuario')?.click();
+  });
+
+  document.getElementById('voltarHome')?.addEventListener('click', () => {
+    history.pushState({}, '', '/');
+    mostrarHome();
+  });
+
+  window.addEventListener('popstate', carregarRotaDaInterface);
+  carregarRotaDaInterface();
 
   const loginButton = document.getElementById('loginButton');
 
@@ -191,6 +217,67 @@ function mostrarMenuUsuario(user) {
 
     window.location.reload();
   });
+}
+
+const MODULOS_APP = {
+  'entrar-trilha': { titulo: 'Entrar em uma trilha', acao: () => abrirEntrarTrilha() },
+  'mapa': { titulo: 'Mapas', acao: () => abrirMapa() },
+  'trilhas': { titulo: 'Trilhas', acao: () => abrirListaTrilhas() },
+  'navegacao': { titulo: 'Navegação', acao: () => abrirListaTrilhas() },
+  'ia': { titulo: 'IA 4x4', acao: () => abrirIA() },
+  'grupos': { titulo: 'Grupos', acao: () => abrirGrupos() },
+  'seguranca': { titulo: 'Segurança', href: '/segurança.html' },
+  'criar-trilha': { titulo: 'Criar trilha', acao: () => abrirCriarTrilha() },
+  'meu-4x4': { titulo: 'Meu 4x4', acao: () => abrirMeu4x4() },
+};
+
+function navegarParaModulo(page) {
+  const modulo = MODULOS_APP[page];
+  if (!modulo) return;
+  if (modulo.href) {
+    window.location.href = modulo.href;
+    return;
+  }
+  history.pushState({ page }, '', '/?page=' + encodeURIComponent(page));
+  abrirPaginaModulo(page);
+}
+
+function mostrarHome() {
+  document.body.classList.remove('module-open');
+  document.getElementById('homeHero').style.display = '';
+  document.getElementById('homeMenu').style.display = '';
+  document.querySelectorAll('[data-home-only="1"]').forEach((el) => el.style.display = '');
+  document.getElementById('paginaModulo').style.display = 'none';
+  document.getElementById('conteudoModulo').innerHTML = '';
+  document.querySelectorAll('[data-bottom-page]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.bottomPage === 'home'));
+}
+
+function abrirPaginaModulo(page) {
+  const modulo = MODULOS_APP[page];
+  if (!modulo) return mostrarHome();
+
+  document.body.classList.add('module-open');
+  document.getElementById('homeHero').style.display = 'none';
+  document.getElementById('homeMenu').style.display = 'none';
+  document.querySelectorAll('[data-home-only="1"]').forEach((el) => el.style.display = 'none');
+
+  const pagina = document.getElementById('paginaModulo');
+  const conteudo = document.getElementById('conteudoModulo');
+  document.getElementById('tituloModulo').textContent = modulo.titulo;
+  pagina.style.display = 'block';
+  conteudo.innerHTML = '';
+
+  document.querySelectorAll('[data-bottom-page]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.bottomPage === page));
+
+  modulo.acao?.();
+}
+
+function carregarRotaDaInterface() {
+  const page = new URLSearchParams(window.location.search).get('page');
+  if (page && MODULOS_APP[page]) abrirPaginaModulo(page);
+  else mostrarHome();
 }
 
 function abrirFuncao(page) {
