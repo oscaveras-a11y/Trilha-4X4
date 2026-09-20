@@ -1149,6 +1149,189 @@ app.get(
 
 /*
  * =========================================================
+ * ROTA PLANEJADA DA TRILHA
+ * =========================================================
+ */
+
+app.get(
+  '/api/trilhas/:id/rota-planejada',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+    const membro = usuarioEhMembroDaTrilha(trilhaId, req.user.id);
+
+    if (!membro) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Você não participa desta trilha.',
+      });
+    }
+
+    const trilha = db.prepare(`
+      SELECT release_at AS releaseAt
+      FROM trails
+      WHERE id = ?
+    `).get(trilhaId);
+
+    if (!trilha) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Trilha não encontrada.',
+      });
+    }
+
+    const liberada =
+      membro.role === 'admin' ||
+      !trilha.releaseAt ||
+      new Date(trilha.releaseAt).getTime() <= Date.now();
+
+    if (!liberada) {
+      return res.json({
+        ok: true,
+        released: false,
+        releaseAt: trilha.releaseAt,
+        points: [],
+      });
+    }
+
+    const points = db.prepare(`
+      SELECT
+        id,
+        position,
+        latitude,
+        longitude,
+        name,
+        notes
+      FROM trail_route_points
+      WHERE trail_id = ?
+      ORDER BY position ASC
+    `).all(trilhaId);
+
+    return res.json({
+      ok: true,
+      released: true,
+      releaseAt: trilha.releaseAt,
+      points,
+    });
+  }
+);
+
+app.put(
+  '/api/trilhas/:id/rota-planejada',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+
+    if (!usuarioEhAdminDaTrilha(trilhaId, req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Somente o criador/administrador pode editar a rota.',
+      });
+    }
+
+    const points = Array.isArray(req.body?.points)
+      ? req.body.points
+      : null;
+
+    if (!points || points.length < 2 || points.length > 500) {
+      return res.status(400).json({
+        ok: false,
+        error: 'A rota precisa ter entre 2 e 500 pontos.',
+      });
+    }
+
+    const normalized = [];
+
+    for (let index = 0; index < points.length; index += 1) {
+      const point = points[index];
+      const latitude = Number(point?.latitude);
+      const longitude = Number(point?.longitude);
+
+      if (
+        !validarNumeroCoordenada(latitude, -90, 90) ||
+        !validarNumeroCoordenada(longitude, -180, 180)
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error: `Coordenadas inválidas no ponto ${index + 1}.`,
+        });
+      }
+
+      normalized.push({
+        id: crypto.randomUUID(),
+        position: index,
+        latitude,
+        longitude,
+        name: limparTexto(point?.name, 100, null),
+        notes: limparTexto(point?.notes, 300, null),
+      });
+    }
+
+    const agora = new Date().toISOString();
+    const salvar = db.transaction(() => {
+      db.prepare(
+        'DELETE FROM trail_route_points WHERE trail_id = ?'
+      ).run(trilhaId);
+
+      const insert = db.prepare(`
+        INSERT INTO trail_route_points (
+          id, trail_id, position, latitude, longitude,
+          name, notes, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      normalized.forEach((point) => {
+        insert.run(
+          point.id,
+          trilhaId,
+          point.position,
+          point.latitude,
+          point.longitude,
+          point.name,
+          point.notes,
+          agora
+        );
+      });
+    });
+
+    salvar();
+
+    return res.json({
+      ok: true,
+      message: 'Rota planejada salva com sucesso.',
+      pointCount: normalized.length,
+    });
+  }
+);
+
+app.delete(
+  '/api/trilhas/:id/rota-planejada',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+
+    if (!usuarioEhAdminDaTrilha(trilhaId, req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Somente o criador/administrador pode apagar a rota.',
+      });
+    }
+
+    db.prepare(
+      'DELETE FROM trail_route_points WHERE trail_id = ?'
+    ).run(trilhaId);
+
+    return res.json({
+      ok: true,
+      message: 'Rota planejada removida.',
+    });
+  }
+);
+
+
+/*
+ * =========================================================
  * SEGURANÇA E EXTENSÃO DA TRILHA
  * =========================================================
  */
