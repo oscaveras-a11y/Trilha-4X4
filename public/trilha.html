@@ -432,6 +432,9 @@
       </p>
       <div class="botoes">
         <button class="botao" id="editarRotaButton">✏️ CRIAR / EDITAR ROTA</button>
+        <button class="botao" id="gravarRotaGpsButton">📡 GRAVAR ROTA COM GPS</button>
+        <button class="botao" id="pausarRotaGpsButton" style="display:none;">⏸ PAUSAR GRAVAÇÃO</button>
+        <button class="botao" id="finalizarRotaGpsButton" style="display:none;">🏁 FINALIZAR GRAVAÇÃO</button>
         <button class="botao" id="desfazerRotaButton" style="display:none;">↩ DESFAZER PONTO</button>
         <button class="botao" id="salvarRotaButton" style="display:none;">💾 SALVAR ROTA</button>
         <button class="botao" id="limparRotaButton" style="display:none;">🗑 LIMPAR ROTA</button>
@@ -505,6 +508,9 @@
   let rotaPlanejadaPontos = [];
   let marcadoresRotaPlanejada = [];
   let editandoRota = false;
+  let gravandoRotaGps = false;
+  let rotaGpsPausada = false;
+  let watchRotaGpsId = null;
 
 
   /*
@@ -1051,6 +1057,120 @@
     }
   }
 
+  function atualizarBotoesGravacaoRota() {
+    const iniciar = document.getElementById('gravarRotaGpsButton');
+    const pausar = document.getElementById('pausarRotaGpsButton');
+    const finalizar = document.getElementById('finalizarRotaGpsButton');
+
+    iniciar.style.display = gravandoRotaGps ? 'none' : 'block';
+    pausar.style.display = gravandoRotaGps ? 'block' : 'none';
+    finalizar.style.display = gravandoRotaGps ? 'block' : 'none';
+    pausar.textContent = rotaGpsPausada
+      ? '▶ CONTINUAR GRAVAÇÃO'
+      : '⏸ PAUSAR GRAVAÇÃO';
+  }
+
+  function registrarPontoRotaGps(position) {
+    if (!gravandoRotaGps || rotaGpsPausada) return;
+
+    atualizarMapaUsuario(position);
+
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const ultimo = rotaPlanejadaPontos[rotaPlanejadaPontos.length - 1];
+
+    if (ultimo) {
+      const distancia = mapa.distance(
+        [ultimo.latitude, ultimo.longitude],
+        [latitude, longitude]
+      );
+      if (distancia < 5) return;
+    }
+
+    rotaPlanejadaPontos.push({ latitude, longitude });
+    desenharRotaPlanejada();
+
+    document.getElementById('rotaPlanejadaStatus').textContent =
+      '📡 Gravando rota pelo GPS · ' + rotaPlanejadaPontos.length + ' pontos.';
+  }
+
+  function iniciarGravacaoRotaGps() {
+    if (!navigator.geolocation) {
+      alert('Este dispositivo não oferece GPS pelo navegador.');
+      return;
+    }
+
+    if (rotaPlanejadaPontos.length &&
+        !confirm('Começar uma nova gravação apagará os pontos atuais ainda não salvos. Continuar?')) {
+      return;
+    }
+
+    rotaPlanejadaPontos = [];
+    gravandoRotaGps = true;
+    rotaGpsPausada = false;
+    editandoRota = false;
+    desenharRotaPlanejada();
+    atualizarBotoesGravacaoRota();
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        registrarPontoRotaGps(position);
+        mapa.setView(
+          [position.coords.latitude, position.coords.longitude],
+          17
+        );
+      },
+      erroGPS,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+
+    watchRotaGpsId = navigator.geolocation.watchPosition(
+      registrarPontoRotaGps,
+      erroGPS,
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 2000 }
+    );
+  }
+
+  function alternarPausaRotaGps() {
+    if (!gravandoRotaGps) return;
+    rotaGpsPausada = !rotaGpsPausada;
+    atualizarBotoesGravacaoRota();
+    document.getElementById('rotaPlanejadaStatus').textContent =
+      rotaGpsPausada
+        ? '⏸ Gravação da rota pausada. Os pontos já registrados foram mantidos.'
+        : '📡 Gravação da rota retomada.';
+  }
+
+  function finalizarGravacaoRotaGps() {
+    if (!gravandoRotaGps) return;
+
+    if (watchRotaGpsId !== null) {
+      navigator.geolocation.clearWatch(watchRotaGpsId);
+      watchRotaGpsId = null;
+    }
+
+    gravandoRotaGps = false;
+    rotaGpsPausada = false;
+    editandoRota = true;
+    atualizarBotoesGravacaoRota();
+    desenharRotaPlanejada();
+
+    ['desfazerRotaButton', 'salvarRotaButton', 'limparRotaButton']
+      .forEach((id) => {
+        document.getElementById(id).style.display = 'block';
+      });
+
+    document.getElementById('editarRotaButton').textContent =
+      '⏹ PARAR DE ADICIONAR PONTOS';
+
+    document.getElementById('rotaPlanejadaStatus').textContent =
+      rotaPlanejadaPontos.length >= 2
+        ? '🏁 Gravação finalizada com ' + rotaPlanejadaPontos.length +
+          ' pontos. Revise a rota e toque em SALVAR ROTA.'
+        : 'Gravação finalizada. São necessários pelo menos 2 pontos para salvar.';
+  }
+
+
   function configurarEditorRota() {
     const editor = document.getElementById('editorRota');
 
@@ -1060,6 +1180,11 @@
     }
 
     editor.style.display = 'block';
+
+    document.getElementById('gravarRotaGpsButton').onclick = iniciarGravacaoRotaGps;
+    document.getElementById('pausarRotaGpsButton').onclick = alternarPausaRotaGps;
+    document.getElementById('finalizarRotaGpsButton').onclick = finalizarGravacaoRotaGps;
+    atualizarBotoesGravacaoRota();
 
     document.getElementById('editarRotaButton').onclick = () => {
       editandoRota = !editandoRota;
