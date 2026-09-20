@@ -1028,7 +1028,7 @@ async function abrirDetalhesGrupo(groupId) {
         <div>
           ${(grupo.trails || []).map((t) =>
             '<button type="button" onclick="abrirTrilha(\'' + t.id + '\')" ' +
-            'style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid rgba(255,255,255,.11);border-radius:10px;background:#fff;cursor:pointer;">' +
+            'style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid rgba(255,255,255,.11);border-radius:10px;background:#151c17;cursor:pointer;">' +
             '<strong>' + escaparTextoTrilha(t.name) + '</strong><br>' +
             escaparTextoTrilha(t.code) + '</button>'
           ).join('') || '<p>Nenhuma trilha vinculada ao grupo.</p>'}
@@ -1597,7 +1597,7 @@ function abrirCriarTrilha() {
  overlay.innerHTML = `
   <div style="
     background:white;
-    color:#000;
+    color:#f5f7f5;
     width:100%;
     max-width:520px;
     max-height:90vh;
@@ -1608,7 +1608,7 @@ function abrirCriarTrilha() {
   ">
 
     <h2 style="
-      color:#000;
+      color:#f5f7f5;
       margin-top:0;
     ">
       🛣️ Criar nova trilha
@@ -1626,7 +1626,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaNome"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1643,9 +1643,9 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -1654,7 +1654,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaTipo"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1669,9 +1669,9 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -1692,7 +1692,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaAcesso"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1707,9 +1707,9 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -1730,7 +1730,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaInicio"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1746,9 +1746,9 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -1757,7 +1757,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaFim"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1773,9 +1773,9 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -1784,7 +1784,7 @@ function abrirCriarTrilha() {
       for="novaTrilhaLiberacao"
       style="
         display:block;
-        color:#000;
+        color:#f5f7f5;
         font-weight:bold;
         margin-top:16px;
         margin-bottom:6px;
@@ -1806,21 +1806,21 @@ function abrirCriarTrilha() {
         width:100%;
         box-sizing:border-box;
         padding:12px;
-        color:#000;
-        background:#fff;
-        border:1px solid #999;
+        color:#f5f7f5;
+        background:#151c17;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
 
     <div style="
-      background:#eef6ff;
-      color:#000;
+      background:#17231a;
+      color:#f5f7f5;
       padding:14px;
       border-radius:10px;
       margin-top:18px;
       line-height:1.5;
-      border:1px solid #b7d7f5;
+      border:1px solid rgba(105,211,55,.25);
     ">
       🛡️ <strong>Segurança da trilha</strong><br>
       Após o término previsto, a janela de segurança
@@ -1838,10 +1838,10 @@ function abrirCriarTrilha() {
         id="fecharCriarTrilha"
         style="
           padding:12px 18px;
-          border:1px solid #999;
+          border:1px solid rgba(255,255,255,.14);
           border-radius:8px;
-          background:#fff;
-          color:#000;
+          background:#151c17;
+          color:#f5f7f5;
           cursor:pointer;
         "
       >
@@ -2193,9 +2193,9 @@ async function abrirListaTrilhas() {
         ${solicitacoes.map((item) => {
           const visual = statusSolicitacao[item.status] || [item.status, '#334155', '#e2e8f0'];
           return `
-            <div style="border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:15px;margin-bottom:10px;background:#fff;">
+            <div style="border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:15px;margin-bottom:10px;background:#151c17;">
               <strong>${escaparTextoTrilha(item.name)}</strong>
-              <div style="margin-top:5px;color:#64748b;font-size:13px;">${escaparTextoTrilha(item.code)}</div>
+              <div style="margin-top:5px;color:#a9b1ab;font-size:13px;">${escaparTextoTrilha(item.code)}</div>
               <div style="display:inline-block;margin-top:10px;padding:6px 9px;border-radius:9px;background:${visual[2]};color:${visual[1]};font-weight:bold;font-size:13px;">
                 ${visual[0]}
               </div>
@@ -2351,8 +2351,8 @@ ${trilha.role === 'admin' ? `
     padding:12px;
     border:1px solid #222;
     border-radius:10px;
-    background:#fff;
-    color:#222;
+    background:#151c17;
+    color:#f5f7f5;
     font-weight:bold;
     cursor:pointer;
     font-size:15px;
@@ -2371,7 +2371,7 @@ ${trilha.role === 'admin' ? `
     overlay.innerHTML = `
       <div style="
         background:white;
-        color:#000;
+        color:#f5f7f5;
         width:100%;
         max-width:650px;
         max-height:90vh;
@@ -2391,7 +2391,7 @@ ${trilha.role === 'admin' ? `
 
           <h2 style="
             margin:0;
-            color:#000;
+            color:#f5f7f5;
           ">
             🛣️ Minhas trilhas
           </h2>
@@ -2477,7 +2477,7 @@ function abrirEntrarTrilha() {
   overlay.innerHTML = `
     <div style="
       background:white;
-      color:#000;
+      color:#f5f7f5;
       width:100%;
       max-width:520px;
       border-radius:18px;
@@ -2487,7 +2487,7 @@ function abrirEntrarTrilha() {
 
       <h2 style="
         margin-top:0;
-        color:#000;
+        color:#f5f7f5;
       ">
         🚙 Entrar em uma trilha
       </h2>
@@ -2516,7 +2516,7 @@ function abrirEntrarTrilha() {
           width:100%;
           box-sizing:border-box;
           padding:13px;
-          border:1px solid #999;
+          border:1px solid rgba(255,255,255,.14);
           border-radius:8px;
           font-size:16px;
           text-transform:uppercase;
@@ -2524,8 +2524,8 @@ function abrirEntrarTrilha() {
       >
 
       <div style="
-        background:#eef6ff;
-        border:1px solid #b7d7f5;
+        background:#17231a;
+        border:1px solid rgba(105,211,55,.25);
         border-radius:10px;
         padding:14px;
         margin-top:16px;
@@ -2547,10 +2547,10 @@ function abrirEntrarTrilha() {
           type="button"
           style="
             padding:12px 18px;
-            border:1px solid #999;
+            border:1px solid rgba(255,255,255,.14);
             border-radius:8px;
-            background:#fff;
-            color:#000;
+            background:#151c17;
+            color:#f5f7f5;
             cursor:pointer;
           "
         >
@@ -2682,7 +2682,7 @@ function mostrarFormularioVeiculo(
   conteudo.innerHTML = `
     <h2 style="
       margin-top:0;
-      color:#000;
+      color:#f5f7f5;
     ">
       🚙 Seu veículo
     </h2>
@@ -2696,8 +2696,8 @@ function mostrarFormularioVeiculo(
     </p>
 
     <div style="
-      background:#eef6ff;
-      border:1px solid #b7d7f5;
+      background:#17231a;
+      border:1px solid rgba(105,211,55,.25);
       border-radius:10px;
       padding:14px;
       margin:16px 0;
@@ -2725,7 +2725,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
       "
     >
@@ -2755,7 +2755,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
       "
@@ -2777,7 +2777,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
       "
@@ -2799,7 +2799,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
       "
@@ -2821,7 +2821,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
       "
@@ -2849,7 +2849,7 @@ function mostrarFormularioVeiculo(
       style="
         width:100%;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
         text-transform:uppercase;
@@ -2885,7 +2885,7 @@ function mostrarFormularioVeiculo(
         width:100%;
         min-height:80px;
         padding:12px;
-        border:1px solid #999;
+        border:1px solid rgba(255,255,255,.14);
         border-radius:8px;
         box-sizing:border-box;
         resize:vertical;
@@ -2904,9 +2904,9 @@ function mostrarFormularioVeiculo(
         type="button"
         style="
           padding:12px 18px;
-          border:1px solid #999;
+          border:1px solid rgba(255,255,255,.14);
           border-radius:8px;
-          background:#fff;
+          background:#151c17;
           cursor:pointer;
         "
       >
