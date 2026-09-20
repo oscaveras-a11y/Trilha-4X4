@@ -91,9 +91,52 @@
     }
 
     #mapa {
-      height: 420px;
+      height: min(62vh, 620px);
+      min-height: 420px;
       border-radius: 16px;
       overflow: hidden;
+      border: 1px solid #cbd5e1;
+      background: #e2e8f0;
+    }
+
+    .mapa-toolbar {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin:12px 0;
+    }
+
+    .mapa-toolbar button {
+      border:1px solid #cbd5e1;
+      background:#fff;
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    .mapa-legenda {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      font-size:13px;
+      margin:10px 0 0;
+      color:#475569;
+    }
+
+    .rota-numero {
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      background:#111827;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:2px solid #fff;
+      box-shadow:0 1px 5px rgba(0,0,0,.35);
+      font-weight:bold;
+      font-size:12px;
     }
 
     .botoes {
@@ -166,7 +209,12 @@
 
     @media (max-width: 600px) {
       #mapa {
-        height: 330px;
+        height: 55vh;
+        min-height: 360px;
+      }
+
+      .card {
+        padding: 14px;
       }
     }
   </style>
@@ -386,7 +434,19 @@
       </div>
     </div>
 
+    <div class="mapa-toolbar">
+      <button type="button" id="verRotaButton">🛣️ VER ROTA</button>
+      <button type="button" id="verTodosButton">👥 VER TODOS</button>
+      <button type="button" id="telaCheiaMapaButton">⛶ MAPA MAIOR</button>
+    </div>
+
     <div id="mapa"></div>
+
+    <div class="mapa-legenda">
+      <span>🛣️ linha escura: rota planejada</span>
+      <span>📍 marcadores: pontos da rota</span>
+      <span>👤 participantes: localização ao vivo</span>
+    </div>
 
   </section>
 
@@ -729,24 +789,103 @@
    */
 
   function iniciarMapa() {
+    mapa = L.map('mapa', {
+      zoomControl: true,
+      preferCanvas: true,
+    }).setView([-14.2350, -51.9253], 4);
 
-    mapa =
-      L.map('mapa')
-        .setView(
-          [-14.2350, -51.9253],
-          4
-        );
-
-
-    L.tileLayer(
+    const mapaPadrao = L.tileLayer(
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
         maxZoom: 19,
-        attribution:
-          '&copy; OpenStreetMap contributors'
+        attribution: '&copy; OpenStreetMap contributors'
       }
-    ).addTo(mapa);
+    );
 
+    const mapaTopografico = L.tileLayer(
+      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 17,
+        attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap'
+      }
+    );
+
+    mapaPadrao.addTo(mapa);
+
+    L.control.layers({
+      'Mapa': mapaPadrao,
+      'Topográfico': mapaTopografico,
+    }, null, {
+      position: 'topright',
+      collapsed: true,
+    }).addTo(mapa);
+
+    L.control.scale({
+      imperial: false,
+      position: 'bottomleft',
+    }).addTo(mapa);
+
+    document.getElementById('verRotaButton').onclick = centralizarRotaPlanejada;
+    document.getElementById('verTodosButton').onclick = enquadrarTudoNoMapa;
+    document.getElementById('telaCheiaMapaButton').onclick = alternarMapaMaior;
+
+    setTimeout(() => mapa.invalidateSize(), 100);
+  }
+
+  function centralizarRotaPlanejada() {
+    if (!rotaPlanejadaLinha || rotaPlanejadaPontos.length < 2) {
+      alert('Ainda não há uma rota planejada para mostrar.');
+      return;
+    }
+
+    mapa.fitBounds(rotaPlanejadaLinha.getBounds(), {
+      padding: [35, 35],
+      maxZoom: 16,
+    });
+  }
+
+  function enquadrarTudoNoMapa() {
+    const pontos = [];
+
+    rotaPlanejadaPontos.forEach((ponto) => {
+      pontos.push([ponto.latitude, ponto.longitude]);
+    });
+
+    marcadoresParticipantes.forEach((marcador) => {
+      pontos.push(marcador.getLatLng());
+    });
+
+    if (marcadorUsuario) {
+      pontos.push(marcadorUsuario.getLatLng());
+    }
+
+    if (pontos.length === 0) {
+      alert('Ainda não há posições para enquadrar.');
+      return;
+    }
+
+    if (pontos.length === 1) {
+      mapa.setView(pontos[0], 16);
+      return;
+    }
+
+    mapa.fitBounds(L.latLngBounds(pontos), {
+      padding: [35, 35],
+      maxZoom: 16,
+    });
+  }
+
+  function alternarMapaMaior() {
+    const elemento = document.getElementById('mapa');
+    const ampliado = elemento.dataset.ampliado === '1';
+
+    elemento.dataset.ampliado = ampliado ? '0' : '1';
+    elemento.style.height = ampliado ? '' : '78vh';
+
+    document.getElementById('telaCheiaMapaButton').textContent =
+      ampliado ? '⛶ MAPA MAIOR' : '↙ MAPA NORMAL';
+
+    setTimeout(() => mapa.invalidateSize(), 50);
   }
 
 
@@ -769,8 +908,10 @@
     ]);
 
     rotaPlanejadaLinha = L.polyline(latLngs, {
+      color: '#111827',
       weight: 6,
-      opacity: 0.85,
+      opacity: 0.9,
+      lineJoin: 'round',
     }).addTo(mapa);
 
     rotaPlanejadaPontos.forEach((ponto, index) => {
@@ -780,19 +921,39 @@
           ? '🏁 Chegada'
           : `📍 Ponto ${index + 1}`;
 
+      const icone = L.divIcon({
+        className: '',
+        html: `<div class="rota-numero">${index + 1}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+
       const marcador = L.marker([
         ponto.latitude,
         ponto.longitude,
-      ])
+      ], {
+        icon: icone,
+        draggable: editandoRota,
+      })
         .addTo(mapa)
         .bindPopup(titulo);
+
+      if (editandoRota) {
+        marcador.on('dragend', (evento) => {
+          const posicao = evento.target.getLatLng();
+          rotaPlanejadaPontos[index].latitude = posicao.lat;
+          rotaPlanejadaPontos[index].longitude = posicao.lng;
+          desenharRotaPlanejada();
+        });
+      }
 
       marcadoresRotaPlanejada.push(marcador);
     });
 
     if (latLngs.length >= 2) {
       mapa.fitBounds(rotaPlanejadaLinha.getBounds(), {
-        padding: [30, 30],
+        padding: [35, 35],
+        maxZoom: 16,
       });
     }
   }
@@ -851,6 +1012,9 @@
       editandoRota = !editandoRota;
       document.getElementById('editarRotaButton').textContent =
         editandoRota ? '⏹ PARAR DE ADICIONAR PONTOS' : '✏️ CRIAR / EDITAR ROTA';
+
+      mapa.getContainer().style.cursor = editandoRota ? 'crosshair' : '';
+      desenharRotaPlanejada();
 
       ['desfazerRotaButton', 'salvarRotaButton', 'limparRotaButton']
         .forEach((id) => {
