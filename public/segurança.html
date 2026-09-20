@@ -1,1 +1,505 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Segurança - Trilha-4X4</title>
+
+  <link
+    rel="stylesheet"
+    href="/style.css"
+  >
+
+</head>
+
+
+<body>
+
+
+  <header class="header">
+
+    <div class="brand">
+
+      <div class="logo">
+        4X4
+      </div>
+
+      <div class="brand-text">
+
+        <strong>
+          TRILHA-4X4
+        </strong>
+
+        <span>
+          Segurança
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <button
+      class="login-button"
+      onclick="window.location.href='/'"
+    >
+      Voltar
+    </button>
+
+  </header>
+
+
+  <main class="container">
+
+
+    <section class="hero">
+
+      <h1>
+        🚨 Segurança
+      </h1>
+
+      <p>
+        Peça ajuda aos membros do Trilha-4X4
+        quando precisar durante sua aventura.
+      </p>
+
+    </section>
+
+
+    <section class="sos-page">
+
+
+      <div class="sos-page-header">
+
+        <div class="sos-page-icon">
+          🆘
+        </div>
+
+        <div>
+
+          <h2>
+            Preciso de ajuda
+          </h2>
+
+          <p>
+            Seu alerta será destinado aos membros
+            do Trilha-4X4.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="location-panel">
+
+        <div class="location-panel-icon">
+          📍
+        </div>
+
+        <div>
+
+          <strong>
+            Sua localização
+          </strong>
+
+          <p id="locationStatus">
+            A localização ainda não foi obtida.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <button
+        id="locationButton"
+        class="location-button"
+        type="button"
+      >
+        📍 Obter minha localização
+      </button>
+
+
+      <div class="reason-panel">
+
+        <h2>
+          Qual é o problema?
+        </h2>
+
+        <p>
+          Selecione o motivo para ajudar os membros
+          a entenderem a situação.
+        </p>
+
+
+        <div class="reason-list">
+
+
+          <button
+            type="button"
+            class="reason-button"
+            data-reason="Quebra do veículo"
+          >
+            🚙
+            <span>
+              Quebra do veículo
+            </span>
+          </button>
+
+
+          <button
+            type="button"
+            class="reason-button"
+            data-reason="Atolado"
+          >
+            🛞
+            <span>
+              Atolado
+            </span>
+          </button>
+
+
+          <button
+            type="button"
+            class="reason-button"
+            data-reason="Problema mecânico"
+          >
+            🔧
+            <span>
+              Problema mecânico
+            </span>
+          </button>
+
+
+          <button
+            type="button"
+            class="reason-button"
+            data-reason="Acidente"
+          >
+            💥
+            <span>
+              Acidente
+            </span>
+          </button>
+
+
+          <button
+            type="button"
+            class="reason-button"
+            data-reason="Outro"
+          >
+            🆘
+            <span>
+              Outro
+            </span>
+          </button>
+
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="selectedReason"
+        class="selected-reason"
+      >
+        Nenhum motivo selecionado.
+      </div>
+
+
+      <button
+        id="sosButton"
+        class="sos-button"
+        type="button"
+      >
+        🆘 ENVIAR ALERTA
+      </button>
+
+
+      <div
+        id="sosStatus"
+        class="sos-status"
+      ></div>
+
+
+    </section>
+
+
+  </main>
+
+
+  <footer>
+
+    <span>
+      Trilha-4X4
+    </span>
+
+    <span>
+      © 2026
+    </span>
+
+  </footer>
+
+
+  <script>
+
+    let latitude = null;
+
+    let longitude = null;
+
+    let motivoSelecionado = null;
+
+
+    const locationButton =
+      document.getElementById('locationButton');
+
+
+    const locationStatus =
+      document.getElementById('locationStatus');
+
+
+    const sosButton =
+      document.getElementById('sosButton');
+
+
+    const sosStatus =
+      document.getElementById('sosStatus');
+
+
+    const selectedReason =
+      document.getElementById('selectedReason');
+
+
+    document
+      .querySelectorAll('.reason-button')
+      .forEach(button => {
+
+        button.addEventListener(
+          'click',
+          () => {
+
+            document
+              .querySelectorAll('.reason-button')
+              .forEach(item => {
+
+                item.classList.remove(
+                  'selected'
+                );
+
+              });
+
+
+            button.classList.add(
+              'selected'
+            );
+
+
+            motivoSelecionado =
+              button.dataset.reason;
+
+
+            selectedReason.textContent =
+              'Motivo selecionado: ' +
+              motivoSelecionado;
+
+          }
+        );
+
+      });
+
+
+    locationButton.addEventListener(
+      'click',
+      obterLocalizacao
+    );
+
+
+    sosButton.addEventListener(
+      'click',
+      enviarAlerta
+    );
+
+
+    function obterLocalizacao() {
+
+      if (!navigator.geolocation) {
+
+        locationStatus.textContent =
+          'Seu dispositivo não suporta localização.';
+
+        return;
+
+      }
+
+
+      locationButton.disabled = true;
+
+      locationButton.textContent =
+        'Obtendo localização...';
+
+
+      navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+          latitude =
+            position.coords.latitude;
+
+          longitude =
+            position.coords.longitude;
+
+
+          locationStatus.innerHTML =
+            'Localização identificada.<br>' +
+            'Latitude: ' +
+            latitude.toFixed(6) +
+            '<br>' +
+            'Longitude: ' +
+            longitude.toFixed(6);
+
+
+          locationButton.textContent =
+            '📍 Localização obtida';
+
+          locationButton.disabled = false;
+
+        },
+
+
+        function(error) {
+
+          console.error(
+            'Erro de localização:',
+            error
+          );
+
+
+          locationStatus.textContent =
+            'Não foi possível obter sua localização.';
+
+
+          locationButton.textContent =
+            '📍 Tentar novamente';
+
+          locationButton.disabled = false;
+
+        },
+
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+
+      );
+
+    }
+
+
+    function enviarAlerta() {
+
+      if (
+        latitude === null ||
+        longitude === null
+      ) {
+
+        alert(
+          '📍 Primeiro obtenha sua localização.'
+        );
+
+        return;
+
+      }
+
+
+      if (!motivoSelecionado) {
+
+        alert(
+          'Selecione o motivo do pedido de ajuda.'
+        );
+
+        return;
+
+      }
+
+
+      const confirmar =
+        confirm(
+          '🆘 ENVIAR ALERTA?\n\n' +
+          'Motivo: ' +
+          motivoSelecionado +
+          '\n\n' +
+          'Sua localização será enviada aos membros do Trilha-4X4.'
+        );
+
+
+      if (!confirmar) {
+
+        return;
+
+      }
+
+
+      sosButton.disabled = true;
+
+      sosButton.textContent =
+        'ENVIANDO ALERTA...';
+
+
+      /*
+        Nesta etapa o alerta ainda não é enviado
+        ao servidor.
+
+        Na próxima etapa vamos conectar esta função
+        ao server.js e enviar:
+
+        - localização
+        - motivo
+        - usuário
+        - data/hora
+      */
+
+
+      console.log(
+        'ALERTA SOS',
+        {
+          latitude,
+          longitude,
+          motivo: motivoSelecionado
+        }
+      );
+
+
+      sosStatus.innerHTML =
+        '<strong>🚨 ALERTA PREPARADO</strong><br>' +
+        'Motivo: ' +
+        motivoSelecionado +
+        '<br>' +
+        'Sua localização foi identificada.<br><br>' +
+        'Na próxima etapa vamos conectar este alerta aos membros do Trilha-4X4.';
+
+
+      sosButton.textContent =
+        '🚨 ALERTA ATIVO';
+
+    }
+
+  </script>
+
+
+</body>
+
+</html>
+```
 
