@@ -2470,6 +2470,22 @@ app.get(
         `).all(req.user.id, groupId)
       : [];
 
+    const outings = db.prepare(`
+      SELECT o.id, o.title, o.description, o.meeting_point AS meetingPoint,
+             o.starts_at AS startsAt, o.status, u.name AS creatorName,
+             r.response AS myResponse,
+             SUM(CASE WHEN all_r.response = 'going' THEN 1 ELSE 0 END) AS goingCount,
+             SUM(CASE WHEN all_r.response = 'maybe' THEN 1 ELSE 0 END) AS maybeCount
+      FROM group_outings o
+      INNER JOIN users u ON u.id = o.creator_id
+      LEFT JOIN group_outing_responses r
+        ON r.outing_id = o.id AND r.user_id = ?
+      LEFT JOIN group_outing_responses all_r ON all_r.outing_id = o.id
+      WHERE o.group_id = ?
+      GROUP BY o.id, r.response
+      ORDER BY o.starts_at ASC
+    `).all(req.user.id, groupId);
+
     return res.json({
       ok: true,
       group: {
@@ -2479,8 +2495,74 @@ app.get(
         members,
         trails,
         availableTrails,
+        outings,
       },
     });
+  }
+);
+
+app.post(
+  '/api/grupos/:id/roles',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    if (!member) return res.status(403).json({ ok: false, error: 'Você não participa deste grupo.' });
+
+    const title = limparTexto(req.body?.title, 100, '');
+    const description = limparTexto(req.body?.description, 500, null);
+    const meetingPoint = limparTexto(req.body?.meetingPoint, 160, null);
+    const startsAt = limparTexto(req.body?.startsAt, 40, '');
+
+    if (title.length < 2 || !startsAt || Number.isNaN(new Date(startsAt).getTime())) {
+      return res.status(400).json({ ok: false, error: 'Informe nome e data válidos para o rolê.' });
+    }
+
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO group_outings
+        (id, group_id, creator_id, title, description, meeting_point, starts_at, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'planning', ?)
+    `).run(id, groupId, req.user.id, title, description, meetingPoint, new Date(startsAt).toISOString(), createdAt);
+
+    db.prepare(`
+      INSERT INTO group_outing_responses (outing_id, user_id, response, updated_at)
+      VALUES (?, ?, 'going', ?)
+    `).run(id, req.user.id, createdAt);
+
+    return res.status(201).json({ ok: true, outing: { id, title } });
+  }
+);
+
+app.post(
+  '/api/grupos/:groupId/roles/:outingId/resposta',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, outingId } = req.params;
+    const response = req.body?.response;
+    if (!['going', 'maybe', 'not_going'].includes(response)) {
+      return res.status(400).json({ ok: false, error: 'Resposta inválida.' });
+    }
+
+    const member = db.prepare(
+      'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    const outing = db.prepare(
+      'SELECT 1 FROM group_outings WHERE id = ? AND group_id = ?'
+    ).get(outingId, groupId);
+    if (!member || !outing) return res.status(403).json({ ok: false, error: 'Rolê indisponível.' });
+
+    db.prepare(`
+      INSERT INTO group_outing_responses (outing_id, user_id, response, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(outing_id, user_id)
+      DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at
+    `).run(outingId, req.user.id, response, new Date().toISOString());
+
+    return res.json({ ok: true });
   }
 );
 
