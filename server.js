@@ -2689,10 +2689,9 @@ app.post(
       const requestId =
         crypto.randomUUID();
 
-      const statusInicial =
-        trilha.visibility === 'publica'
-          ? 'accepted'
-          : 'pending';
+      // Toda entrada precisa ser aprovada pelo criador/administrador,
+      // inclusive quando a trilha é pública.
+      const statusInicial = 'pending';
 
 
       db.prepare(`
@@ -2726,48 +2725,11 @@ app.post(
         agora
       );
 
-      if (statusInicial === 'accepted') {
-        db.prepare(`
-          INSERT INTO trail_members (
-            trail_id,
-            user_id,
-            role,
-            status,
-            joined_at
-          )
-          VALUES (?, ?, 'member', 'active', ?)
-          ON CONFLICT(trail_id, user_id)
-          DO UPDATE SET
-            role = 'member',
-            status = 'active',
-            joined_at = excluded.joined_at
-        `).run(
-          trilha.id,
-          req.user.id,
-          agora
-        );
-
-        db.prepare(`
-          UPDATE trail_join_requests
-          SET
-            reviewed_at = ?,
-            reviewed_by = ?
-          WHERE id = ?
-        `).run(
-          agora,
-          trilha.creatorId || null,
-          requestId
-        );
-      }
-
-
       return res.status(201).json({
         ok: true,
 
         message:
-          statusInicial === 'accepted'
-            ? 'Entrada aprovada automaticamente na trilha pública.'
-            : 'Solicitação enviada ao administrador da trilha.',
+          'Solicitação enviada ao administrador da trilha. Aguarde a aprovação para participar.',
 
         request: {
           id: requestId,
