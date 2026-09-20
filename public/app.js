@@ -518,3 +518,26 @@ function cancelarSOS() {
   }
 
 }
+function abrirSeguranca() {
+
+  const seguranca =
+    document.getElementById('seguranca');
+
+  if (!seguranca) {
+
+    alert(
+      'Área de segurança não encontrada.'
+    );
+
+    return;
+
+  }
+
+  seguranca.style.display = 'block';
+
+  seguranca.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+
+}
