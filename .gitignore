@@ -3,3 +3,8 @@ node_modules/
 .env.*
 !.env.example
 npm-debug.log*
+
+# Banco local / arquivos temporários do SQLite
+data/*.db
+data/*.db-wal
+data/*.db-shm
