@@ -2553,6 +2553,7 @@ app.get(
         id: groupId,
         name: membership.name,
         role: membership.role,
+        currentUserId: req.user.id,
         members,
         trails,
         availableTrails,
