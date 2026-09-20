@@ -8,8 +8,8 @@ Aplicação web para organizar trilhas, passeios e eventos 4x4, com cadastro de 
 - Cadastro de um ou mais veículos; placa é opcional.
 - Criação de trilhas/eventos com ID no formato `4X4-XXXXX`.
 - Busca de trilha pelo ID.
-- Entrada automática em trilhas públicas.
-- Solicitação de participação em trilhas privadas/por convite.
+- Solicitação de participação em qualquer trilha, inclusive pública.
+- Entrada somente após aprovação do criador/administrador.
 - Painel do administrador com nome, e-mail e dados do veículo do solicitante.
 - Aprovação ou recusa pelo administrador.
 - Modo Trilha com compartilhamento de localização entre participantes.
@@ -72,8 +72,7 @@ A chave da OpenAI é utilizada somente no servidor e nunca deve ser enviada ao n
 
 1. O administrador cria a trilha e recebe um ID `4X4-XXXXX`.
 2. O participante cadastra seu veículo e procura a trilha pelo ID.
-3. Em trilha pública, a entrada é automática.
-4. Em trilha privada ou por convite, a solicitação fica pendente.
-5. O administrador visualiza nome, e-mail e veículo do participante. A placa pode ficar vazia.
-6. O administrador aceita ou recusa a solicitação.
-7. Após aprovação, o participante passa a acessar a página e os recursos daquela trilha.
+3. A solicitação fica pendente independentemente de a trilha ser pública, privada ou por convite.
+4. O criador/administrador visualiza nome, e-mail e veículo do participante. A placa pode ficar vazia.
+5. O criador/administrador aceita ou recusa a solicitação.
+6. Somente após a aprovação o participante passa a acessar a página e os recursos daquela trilha.
