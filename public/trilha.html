@@ -427,8 +427,8 @@
 
     <div id="editorRota" style="display:none;margin:12px 0;">
       <p style="margin-top:0;">
-        <strong>Editor de rota:</strong> toque/clique no mapa na ordem do percurso.
-        O primeiro ponto será a saída e o último será a chegada.
+        <strong>Editor de rota:</strong> toque/clique no mapa para adicionar pontos.
+        Arraste para mover, toque em um ponto para excluir e toque na linha entre dois pontos para inserir um novo ponto.
       </p>
       <div class="botoes">
         <button class="botao" id="editarRotaButton">✏️ CRIAR / EDITAR ROTA</button>
@@ -918,6 +918,42 @@
       lineJoin: 'round',
     }).addTo(mapa);
 
+    if (editandoRota && latLngs.length >= 2) {
+      rotaPlanejadaLinha.on('click', (evento) => {
+        if (evento.originalEvent) {
+          L.DomEvent.stopPropagation(evento.originalEvent);
+        }
+
+        let melhorIndice = 1;
+        let menorDistancia = Infinity;
+        const pontoClique = mapa.latLngToLayerPoint(evento.latlng);
+
+        for (let i = 0; i < latLngs.length - 1; i += 1) {
+          const a = mapa.latLngToLayerPoint(L.latLng(latLngs[i]));
+          const b = mapa.latLngToLayerPoint(L.latLng(latLngs[i + 1]));
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const comprimento2 = dx * dx + dy * dy;
+          let t = comprimento2 ? ((pontoClique.x - a.x) * dx + (pontoClique.y - a.y) * dy) / comprimento2 : 0;
+          t = Math.max(0, Math.min(1, t));
+          const px = a.x + t * dx;
+          const py = a.y + t * dy;
+          const distancia = Math.hypot(pontoClique.x - px, pontoClique.y - py);
+
+          if (distancia < menorDistancia) {
+            menorDistancia = distancia;
+            melhorIndice = i + 1;
+          }
+        }
+
+        rotaPlanejadaPontos.splice(melhorIndice, 0, {
+          latitude: evento.latlng.lat,
+          longitude: evento.latlng.lng,
+        });
+        desenharRotaPlanejada();
+      });
+    }
+
     rotaPlanejadaPontos.forEach((ponto, index) => {
       const titulo = index === 0
         ? '🚩 Saída'
@@ -947,6 +983,19 @@
           const posicao = evento.target.getLatLng();
           rotaPlanejadaPontos[index].latitude = posicao.lat;
           rotaPlanejadaPontos[index].longitude = posicao.lng;
+          desenharRotaPlanejada();
+        });
+
+        marcador.on('click', (evento) => {
+          if (evento.originalEvent) {
+            L.DomEvent.stopPropagation(evento.originalEvent);
+          }
+
+          if (!confirm('Excluir o ponto ' + (index + 1) + ' da rota?')) {
+            return;
+          }
+
+          rotaPlanejadaPontos.splice(index, 1);
           desenharRotaPlanejada();
         });
       }
