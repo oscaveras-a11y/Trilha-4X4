@@ -223,7 +223,7 @@ const MODULOS_APP = {
   'entrar-trilha': { titulo: 'Entrar em uma trilha', acao: () => abrirEntrarTrilha() },
   'mapa': { titulo: 'Mapas', acao: () => abrirMapa() },
   'trilhas': { titulo: 'Trilhas', acao: () => abrirListaTrilhas() },
-  'navegacao': { titulo: 'Navegação', acao: () => abrirListaTrilhas() },
+  'navegacao': { titulo: 'Navegação', acao: () => abrirNavegacao() },
   'ia': { titulo: 'IA 4x4', acao: () => abrirIA() },
   'grupos': { titulo: 'Grupos', acao: () => abrirGrupos() },
   'seguranca': { titulo: 'Segurança', href: '/segurança.html' },
@@ -308,6 +308,57 @@ function anexarPainelAoModulo(elemento) {
   }
 
   return true;
+}
+
+async function abrirNavegacao() {
+  const destino = document.getElementById('conteudoModulo');
+  if (!destino) return;
+
+  destino.innerHTML = `
+    <div style="display:grid;gap:14px;">
+      <div style="padding:20px;border:1px solid var(--border);border-radius:18px;background:var(--surface);">
+        <h2 style="margin-bottom:8px;">🧭 Navegação 4x4</h2>
+        <p style="color:var(--text-secondary);line-height:1.6;">
+          Escolha uma trilha da qual você já participa para abrir a rota planejada,
+          localização dos participantes e modo de navegação.
+        </p>
+      </div>
+      <div id="navegacaoTrilhas" style="display:grid;gap:12px;"></div>
+    </div>
+  `;
+
+  const lista = document.getElementById('navegacaoTrilhas');
+
+  try {
+    const resposta = await fetch('/api/trilhas', { cache: 'no-store' });
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      lista.innerHTML = '<p>Entre na sua conta para usar a navegação.</p>';
+      return;
+    }
+
+    const trilhas = Array.isArray(dados.trails) ? dados.trails : [];
+
+    if (!trilhas.length) {
+      lista.innerHTML = '<p style="color:var(--text-secondary);">Você ainda não participa de nenhuma trilha aprovada.</p>';
+      return;
+    }
+
+    lista.innerHTML = trilhas.map((trilha) => `
+      <button type="button"
+        onclick="window.location.href='/trilha.html?id=${encodeURIComponent(trilha.id)}'"
+        style="width:100%;text-align:left;padding:18px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:var(--text);cursor:pointer;">
+        <strong style="font-size:18px;">🛣️ ${escaparTextoTrilha(trilha.name)}</strong>
+        <span style="display:block;margin-top:7px;color:var(--text-secondary);">
+          ${escaparTextoTrilha(trilha.code)} · Abrir rota e navegação →
+        </span>
+      </button>
+    `).join('');
+  } catch (erro) {
+    console.error('Erro na navegação:', erro);
+    lista.innerHTML = '<p>Não foi possível carregar suas trilhas.</p>';
+  }
 }
 
 function abrirFuncao(page) {
