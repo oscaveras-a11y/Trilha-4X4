@@ -761,6 +761,106 @@ async function editarGrupo(groupId, nomeAtual) {
   }
 }
 
+async function abrirDetalhesGrupo(groupId) {
+  try {
+    const resposta = await fetch(
+      '/api/grupos/' + encodeURIComponent(groupId),
+      { cache: 'no-store' }
+    );
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível abrir o grupo.');
+      return;
+    }
+
+    const grupo = dados.group;
+    document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+
+    const overlay = document.createElement('div');
+    overlay.dataset.gruposOverlay = '1';
+    overlay.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;box-sizing:border-box;';
+
+    const opcoesTrilha = (grupo.availableTrails || []).map((item) =>
+      '<option value="' + escaparTextoTrilha(item.id) + '">' +
+      escaparTextoTrilha(item.name) + ' · ' + escaparTextoTrilha(item.code) +
+      '</option>'
+    ).join('');
+
+    overlay.innerHTML = `
+      <div style="background:#fff;color:#000;width:100%;max-width:680px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+          <div><small>GRUPO 4X4</small><h2 style="margin:4px 0 0;">${escaparTextoTrilha(grupo.name)}</h2></div>
+          <button id="voltarListaGrupos" type="button">← Voltar</button>
+        </div>
+
+        <h3>👥 Participantes</h3>
+        <div>
+          ${(grupo.members || []).map((m) =>
+            '<div style="padding:10px 0;border-bottom:1px solid #ddd;"><strong>' +
+            escaparTextoTrilha(m.name) + '</strong> · ' +
+            (m.role === 'admin' ? 'Administrador' : 'Participante') +
+            '</div>'
+          ).join('') || '<p>Nenhum participante.</p>'}
+        </div>
+
+        <h3 style="margin-top:22px;">🛣️ Trilhas do grupo</h3>
+        <div>
+          ${(grupo.trails || []).map((t) =>
+            '<button type="button" onclick="abrirTrilha(\'' + t.id + '\')" ' +
+            'style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;">' +
+            '<strong>' + escaparTextoTrilha(t.name) + '</strong><br>' +
+            escaparTextoTrilha(t.code) + '</button>'
+          ).join('') || '<p>Nenhuma trilha vinculada ao grupo.</p>'}
+        </div>
+
+        ${grupo.role === 'admin' ? `
+          <h3 style="margin-top:22px;">Adicionar uma trilha</h3>
+          ${opcoesTrilha ? `
+            <div style="display:flex;gap:8px;">
+              <select id="trilhaParaGrupo" style="flex:1;padding:11px;">${opcoesTrilha}</select>
+              <button id="adicionarTrilhaGrupo" type="button" style="padding:11px;border:0;border-radius:8px;background:#222;color:#fff;">Adicionar</button>
+            </div>
+          ` : '<p>Suas trilhas administradas já estão vinculadas ou você ainda não administra nenhuma.</p>'}
+        ` : ''}
+      </div>
+    `;
+
+    if (!anexarPainelAoModulo(overlay)) document.body.appendChild(overlay);
+
+    document.getElementById('voltarListaGrupos').onclick = () => {
+      overlay.remove();
+      abrirGrupos();
+    };
+
+    const adicionar = document.getElementById('adicionarTrilhaGrupo');
+    if (adicionar) {
+      adicionar.onclick = async () => {
+        const trailId = document.getElementById('trilhaParaGrupo').value;
+        const salvar = await fetch(
+          '/api/grupos/' + encodeURIComponent(groupId) + '/trilhas',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trailId }),
+          }
+        );
+        const resultado = await salvar.json();
+        if (!salvar.ok) {
+          alert(resultado.error || 'Não foi possível adicionar a trilha.');
+          return;
+        }
+        overlay.remove();
+        abrirDetalhesGrupo(groupId);
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao abrir grupo:', error);
+    alert('Não foi possível conectar ao servidor.');
+  }
+}
+
 async function abrirGrupos() {
   try {
     const resposta = await fetch('/api/grupos', { cache: 'no-store' });
@@ -791,6 +891,11 @@ async function abrirGrupos() {
             <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;">
               <strong>${escaparTextoTrilha(grupo.name)}</strong><br>
               ${grupo.memberCount} participante(s) · ${escaparTextoTrilha(grupo.role)}
+              <button
+                type="button"
+                onclick="abrirDetalhesGrupo('${grupo.id}')"
+                style="display:block;margin-top:10px;padding:9px 12px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;font-weight:bold;"
+              >Abrir grupo →</button>
               ${grupo.role === 'admin' ? `
                 <button
                   type="button"
