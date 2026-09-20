@@ -369,6 +369,23 @@
       🗺️ Mapa da trilha
     </h2>
 
+    <div id="rotaPlanejadaStatus" class="status">
+      Carregando rota planejada...
+    </div>
+
+    <div id="editorRota" style="display:none;margin:12px 0;">
+      <p style="margin-top:0;">
+        <strong>Editor de rota:</strong> toque/clique no mapa na ordem do percurso.
+        O primeiro ponto será a saída e o último será a chegada.
+      </p>
+      <div class="botoes">
+        <button class="botao" id="editarRotaButton">✏️ CRIAR / EDITAR ROTA</button>
+        <button class="botao" id="desfazerRotaButton" style="display:none;">↩ DESFAZER PONTO</button>
+        <button class="botao" id="salvarRotaButton" style="display:none;">💾 SALVAR ROTA</button>
+        <button class="botao" id="limparRotaButton" style="display:none;">🗑 LIMPAR ROTA</button>
+      </div>
+    </div>
+
     <div id="mapa"></div>
 
   </section>
@@ -419,6 +436,11 @@
   const marcadoresParticipantes = new Map();
 
   const rotasParticipantes = new Map();
+
+  let rotaPlanejadaLinha = null;
+  let rotaPlanejadaPontos = [];
+  let marcadoresRotaPlanejada = [];
+  let editandoRota = false;
 
 
   /*
@@ -728,6 +750,184 @@
   }
 
 
+  function desenharRotaPlanejada() {
+    marcadoresRotaPlanejada.forEach((marcador) => marcador.remove());
+    marcadoresRotaPlanejada = [];
+
+    if (rotaPlanejadaLinha) {
+      rotaPlanejadaLinha.remove();
+      rotaPlanejadaLinha = null;
+    }
+
+    if (!mapa || rotaPlanejadaPontos.length === 0) {
+      return;
+    }
+
+    const latLngs = rotaPlanejadaPontos.map((ponto) => [
+      ponto.latitude,
+      ponto.longitude,
+    ]);
+
+    rotaPlanejadaLinha = L.polyline(latLngs, {
+      weight: 6,
+      opacity: 0.85,
+    }).addTo(mapa);
+
+    rotaPlanejadaPontos.forEach((ponto, index) => {
+      const titulo = index === 0
+        ? '🚩 Saída'
+        : index === rotaPlanejadaPontos.length - 1
+          ? '🏁 Chegada'
+          : `📍 Ponto ${index + 1}`;
+
+      const marcador = L.marker([
+        ponto.latitude,
+        ponto.longitude,
+      ])
+        .addTo(mapa)
+        .bindPopup(titulo);
+
+      marcadoresRotaPlanejada.push(marcador);
+    });
+
+    if (latLngs.length >= 2) {
+      mapa.fitBounds(rotaPlanejadaLinha.getBounds(), {
+        padding: [30, 30],
+      });
+    }
+  }
+
+  async function carregarRotaPlanejada() {
+    const status = document.getElementById('rotaPlanejadaStatus');
+
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(trilhaId) +
+        '/rota-planejada',
+        { cache: 'no-store' }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        status.textContent = dados.error || 'Não foi possível carregar a rota planejada.';
+        return;
+      }
+
+      if (!dados.released) {
+        status.textContent =
+          '🔒 A rota foi preparada pelo administrador e será liberada em ' +
+          dataBR(dados.releaseAt) + '.';
+        return;
+      }
+
+      rotaPlanejadaPontos = Array.isArray(dados.points)
+        ? dados.points
+        : [];
+
+      status.textContent = rotaPlanejadaPontos.length >= 2
+        ? `🗺️ Rota planejada disponível com ${rotaPlanejadaPontos.length} pontos.`
+        : 'O administrador ainda não criou uma rota para esta trilha.';
+
+      desenharRotaPlanejada();
+    } catch (erro) {
+      console.warn('Rota planejada indisponível:', erro);
+      status.textContent = 'Não foi possível carregar a rota planejada.';
+    }
+  }
+
+  function configurarEditorRota() {
+    const editor = document.getElementById('editorRota');
+
+    if (!trilha || trilha.role !== 'admin') {
+      editor.style.display = 'none';
+      return;
+    }
+
+    editor.style.display = 'block';
+
+    document.getElementById('editarRotaButton').onclick = () => {
+      editandoRota = !editandoRota;
+      document.getElementById('editarRotaButton').textContent =
+        editandoRota ? '⏹ PARAR DE ADICIONAR PONTOS' : '✏️ CRIAR / EDITAR ROTA';
+
+      ['desfazerRotaButton', 'salvarRotaButton', 'limparRotaButton']
+        .forEach((id) => {
+          document.getElementById(id).style.display = editandoRota ? 'block' : 'none';
+        });
+    };
+
+    document.getElementById('desfazerRotaButton').onclick = () => {
+      rotaPlanejadaPontos.pop();
+      desenharRotaPlanejada();
+    };
+
+    document.getElementById('limparRotaButton').onclick = async () => {
+      if (!confirm('Apagar toda a rota planejada?')) {
+        return;
+      }
+
+      const resposta = await fetch(
+        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/rota-planejada',
+        { method: 'DELETE' }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        alert(dados.error || 'Não foi possível apagar a rota.');
+        return;
+      }
+
+      rotaPlanejadaPontos = [];
+      desenharRotaPlanejada();
+      document.getElementById('rotaPlanejadaStatus').textContent =
+        'O administrador ainda não criou uma rota para esta trilha.';
+    };
+
+    document.getElementById('salvarRotaButton').onclick = async () => {
+      if (rotaPlanejadaPontos.length < 2) {
+        alert('Adicione pelo menos o ponto de saída e o ponto de chegada.');
+        return;
+      }
+
+      const resposta = await fetch(
+        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/rota-planejada',
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ points: rotaPlanejadaPontos }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        alert(dados.error || 'Não foi possível salvar a rota.');
+        return;
+      }
+
+      alert('✅ Rota salva com sucesso.');
+      document.getElementById('rotaPlanejadaStatus').textContent =
+        `🗺️ Rota planejada salva com ${rotaPlanejadaPontos.length} pontos.`;
+    };
+  }
+
+  function adicionarPontoPlanejadoNoMapa(evento) {
+    if (!editandoRota || !trilha || trilha.role !== 'admin') {
+      return;
+    }
+
+    rotaPlanejadaPontos.push({
+      latitude: evento.latlng.lat,
+      longitude: evento.latlng.lng,
+    });
+
+    desenharRotaPlanejada();
+  }
+
+
   /*
    * CARREGAR TRILHA
    */
@@ -846,6 +1046,8 @@
         trilha.participants
       );
 
+      configurarEditorRota();
+      carregarRotaPlanejada();
       carregarRota();
 
       carregarSeguranca();
@@ -1805,6 +2007,7 @@
    */
 
   iniciarMapa();
+  mapa.on('click', adicionarPontoPlanejadoNoMapa);
 
   carregarTrilha();
 
