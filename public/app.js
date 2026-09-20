@@ -115,8 +115,6 @@ function abrirFuncao(page) {
 
     case 'seguranca':
 
-     case 'seguranca':
-
   abrirSeguranca();
 
   break;
