@@ -2629,6 +2629,106 @@ app.post(
 );
 
 app.put(
+  '/api/grupos/:groupId/membros/:userId',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, userId } = req.params;
+    const role = req.body?.role;
+
+    if (!['admin', 'member'].includes(role)) {
+      return res.status(400).json({ ok: false, error: 'Função inválida.' });
+    }
+
+    const requester = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    const target = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, userId);
+
+    if (!requester || requester.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'Somente administradores podem alterar membros.' });
+    }
+    if (!target) return res.status(404).json({ ok: false, error: 'Membro não encontrado.' });
+
+    if (target.role === 'admin' && role === 'member') {
+      const admins = db.prepare(
+        "SELECT COUNT(*) AS total FROM group_members WHERE group_id = ? AND role = 'admin'"
+      ).get(groupId).total;
+      if (admins <= 1) {
+        return res.status(400).json({ ok: false, error: 'O grupo precisa ter pelo menos um administrador.' });
+      }
+    }
+
+    db.prepare('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?')
+      .run(role, groupId, userId);
+    return res.json({ ok: true });
+  }
+);
+
+app.delete(
+  '/api/grupos/:groupId/membros/:userId',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, userId } = req.params;
+    const requester = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    const target = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, userId);
+
+    if (!requester || requester.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'Somente administradores podem remover membros.' });
+    }
+    if (!target) return res.status(404).json({ ok: false, error: 'Membro não encontrado.' });
+    if (userId === req.user.id) {
+      return res.status(400).json({ ok: false, error: 'Use a opção Sair do grupo para remover sua própria participação.' });
+    }
+
+    if (target.role === 'admin') {
+      const admins = db.prepare(
+        "SELECT COUNT(*) AS total FROM group_members WHERE group_id = ? AND role = 'admin'"
+      ).get(groupId).total;
+      if (admins <= 1) {
+        return res.status(400).json({ ok: false, error: 'Não é possível remover o único administrador.' });
+      }
+    }
+
+    db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, userId);
+    return res.json({ ok: true });
+  }
+);
+
+app.delete(
+  '/api/grupos/:id/sair',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+
+    if (!member) return res.status(404).json({ ok: false, error: 'Você não participa deste grupo.' });
+
+    if (member.role === 'admin') {
+      const admins = db.prepare(
+        "SELECT COUNT(*) AS total FROM group_members WHERE group_id = ? AND role = 'admin'"
+      ).get(groupId).total;
+      if (admins <= 1) {
+        return res.status(400).json({
+          ok: false,
+          error: 'Promova outro membro a administrador antes de sair do grupo.',
+        });
+      }
+    }
+
+    db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, req.user.id);
+    return res.json({ ok: true, message: 'Você saiu do grupo.' });
+  }
+);
+
+app.put(
   '/api/grupos/:id',
   exigirLogin,
   (req, res) => {
