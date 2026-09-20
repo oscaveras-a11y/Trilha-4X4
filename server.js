@@ -926,7 +926,17 @@ app.get(
             trails.release_at AS releaseAt,
             trails.safety_end_at AS safetyEndAt,
             trails.status,
-            trail_members.role
+            trail_members.role,
+            CASE
+              WHEN trail_members.role = 'admin'
+              THEN (
+                SELECT COUNT(*)
+                FROM trail_join_requests
+                WHERE trail_join_requests.trail_id = trails.id
+                  AND trail_join_requests.status = 'pending'
+              )
+              ELSE 0
+            END AS pendingRequestCount
           FROM trail_members
           INNER JOIN trails
             ON trails.id =
