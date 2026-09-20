@@ -541,3 +541,94 @@ body.module-open footer {
     padding-top:0;
   }
 }
+
+
+/* Home visual inspirada na referência aprovada */
+body { padding-bottom:96px; background:#07100b; }
+.header { position:absolute; z-index:5; background:transparent; border:0; }
+.header .brand { opacity:0; pointer-events:none; }
+.header .login-button { background:rgba(10,16,12,.72); backdrop-filter:blur(8px); }
+
+.container { width:min(94%,1050px); }
+.hero {
+  position:relative;
+  max-width:none;
+  min-height:360px;
+  margin:-55px -3vw 18px;
+  padding:58px 5vw 38px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  overflow:hidden;
+  border-radius:0 0 28px 28px;
+  background:
+    linear-gradient(90deg,rgba(4,10,6,.96) 0%,rgba(4,10,6,.68) 48%,rgba(4,10,6,.22) 100%),
+    radial-gradient(circle at 78% 45%,#3f4935 0,#17251a 35%,#08100b 72%);
+}
+.hero::after {
+  content:"🚙";
+  position:absolute;
+  right:8%;
+  bottom:48px;
+  font-size:clamp(100px,22vw,235px);
+  filter:grayscale(.25) drop-shadow(0 20px 24px rgba(0,0,0,.5));
+  opacity:.9;
+}
+.hero h1,.hero p,.hero-brand { position:relative; z-index:2; max-width:560px; }
+.hero h1 { font-size:clamp(38px,7vw,64px); margin-top:42px; }
+.hero p { font-size:clamp(16px,2.5vw,22px); max-width:650px; }
+.hero-brand { display:flex; align-items:center; gap:10px; font-size:22px; }
+.hero-brand strong { font-size:24px; }
+.hero-brand span { color:#62c52f; }
+.hero-actions { position:absolute; right:5vw; top:48px; z-index:3; display:flex; gap:10px; }
+.hero-actions button { width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(15,22,17,.8);color:white;font-size:18px; }
+
+.menu-grid { grid-template-columns:repeat(2,1fr); gap:18px; }
+.menu-card {
+  position:relative;
+  min-height:190px;
+  overflow:hidden;
+  padding:24px 70px 22px 28px;
+  justify-content:flex-end;
+  border-color:rgba(255,255,255,.2);
+  background:
+    linear-gradient(0deg,rgba(4,10,6,.96),rgba(4,10,6,.25)),
+    radial-gradient(circle at 70% 20%,#334a32,#101a12 70%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.menu-card:nth-child(2n) { background:linear-gradient(0deg,rgba(4,10,6,.96),rgba(4,10,6,.28)),radial-gradient(circle at 65% 20%,#38505c,#101a12 70%); }
+.menu-card:nth-child(3n) { background:linear-gradient(0deg,rgba(4,10,6,.96),rgba(4,10,6,.28)),radial-gradient(circle at 65% 20%,#60452e,#101a12 70%); }
+.card-icon { position:absolute; left:28px; top:22px; background:rgba(20,31,23,.78); backdrop-filter:blur(6px); }
+.menu-card h2 { font-size:25px; }
+.menu-card p { font-size:16px; max-width:330px; }
+.card-arrow { position:absolute; right:20px; bottom:20px; width:48px;height:48px;border-radius:50%;border:2px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:38px;line-height:1; }
+.create-card { border-color:rgba(134,196,64,.65); }
+
+.bottom-nav {
+  position:fixed; z-index:999; left:50%; bottom:12px; transform:translateX(-50%);
+  width:min(94%,980px); height:78px; padding:8px 12%;
+  display:flex; justify-content:space-between; align-items:center;
+  border:1px solid rgba(255,255,255,.12); border-radius:28px;
+  background:rgba(15,22,17,.94); backdrop-filter:blur(16px);
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+}
+.bottom-nav button { border:0;background:none;color:#aeb5b0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px; }
+.bottom-nav button span { font-size:25px; }
+.bottom-nav button.active { color:#65d334; }
+
+@media(max-width:600px){
+  .container{width:94%;padding-top:0}
+  .hero{min-height:355px;margin:0 -3.2% 18px;padding:72px 6% 30px}
+  .hero::after{font-size:120px;right:-4%;bottom:85px;opacity:.62}
+  .hero h1{font-size:39px;max-width:310px}
+  .hero p{font-size:17px;max-width:340px}
+  .hero-brand strong{font-size:19px}
+  .hero-actions{top:24px}
+  .menu-grid{gap:12px}
+  .menu-card{min-height:170px;padding:70px 42px 16px 16px}
+  .card-icon{left:16px;top:16px}
+  .menu-card h2{font-size:19px}
+  .menu-card p{font-size:13px}
+  .card-arrow{right:10px;bottom:16px;width:36px;height:36px;font-size:28px}
+  .bottom-nav{height:70px;padding:7px 15%;border-radius:24px}
+}
