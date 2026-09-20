@@ -2394,6 +2394,63 @@ app.post(
   }
 );
 
+app.post(
+  '/api/grupos/:id/convite',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+
+    if (!member || member.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'Somente o administrador pode gerar convites.' });
+    }
+
+    let code;
+    do {
+      code = 'G4X4-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    } while (db.prepare('SELECT 1 FROM group_invites WHERE code = ?').get(code));
+
+    db.prepare('UPDATE group_invites SET active = 0 WHERE group_id = ?').run(groupId);
+    db.prepare(`
+      INSERT INTO group_invites (code, group_id, created_by, created_at, active)
+      VALUES (?, ?, ?, ?, 1)
+    `).run(code, groupId, req.user.id, new Date().toISOString());
+
+    return res.status(201).json({ ok: true, code });
+  }
+);
+
+app.post(
+  '/api/grupos/entrar',
+  exigirLogin,
+  (req, res) => {
+    const code = limparTexto(req.body?.code, 30, '').trim().toUpperCase();
+    const invite = db.prepare(`
+      SELECT gi.group_id AS groupId, g.name
+      FROM group_invites gi
+      INNER JOIN groups g ON g.id = gi.group_id
+      WHERE gi.code = ? AND gi.active = 1
+    `).get(code);
+
+    if (!invite) {
+      return res.status(404).json({ ok: false, error: 'Código de convite inválido ou desativado.' });
+    }
+
+    db.prepare(`
+      INSERT OR IGNORE INTO group_members (group_id, user_id, role, joined_at)
+      VALUES (?, ?, 'member', ?)
+    `).run(invite.groupId, req.user.id, new Date().toISOString());
+
+    return res.json({
+      ok: true,
+      group: { id: invite.groupId, name: invite.name },
+      message: 'Você entrou no grupo.',
+    });
+  }
+);
+
 app.get(
   '/api/grupos',
   exigirLogin,
@@ -2486,6 +2543,10 @@ app.get(
       ORDER BY o.starts_at ASC
     `).all(req.user.id, groupId);
 
+    const activeInvite = membership.role === 'admin'
+      ? db.prepare('SELECT code FROM group_invites WHERE group_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1').get(groupId)
+      : null;
+
     return res.json({
       ok: true,
       group: {
@@ -2496,6 +2557,7 @@ app.get(
         trails,
         availableTrails,
         outings,
+        inviteCode: activeInvite?.code || null,
       },
     });
   }
