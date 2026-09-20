@@ -2563,6 +2563,57 @@ app.get(
   }
 );
 
+app.get(
+  '/api/grupos/:id/mensagens',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    if (!member) return res.status(403).json({ ok: false, error: 'Você não participa deste grupo.' });
+
+    const messages = db.prepare(`
+      SELECT gm.id, gm.message, gm.created_at AS createdAt,
+             u.id AS userId, u.name AS userName
+      FROM group_messages gm
+      INNER JOIN users u ON u.id = gm.user_id
+      WHERE gm.group_id = ?
+      ORDER BY gm.created_at DESC
+      LIMIT 100
+    `).all(groupId).reverse();
+
+    return res.json({ ok: true, messages });
+  }
+);
+
+app.post(
+  '/api/grupos/:id/mensagens',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    if (!member) return res.status(403).json({ ok: false, error: 'Você não participa deste grupo.' });
+
+    const message = limparTexto(req.body?.message, 1000, '');
+    if (!message) return res.status(400).json({ ok: false, error: 'Escreva uma mensagem.' });
+
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO group_messages (id, group_id, user_id, message, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, groupId, req.user.id, message, createdAt);
+
+    return res.status(201).json({
+      ok: true,
+      message: { id, message, createdAt, userId: req.user.id, userName: req.user.name },
+    });
+  }
+);
+
 app.post(
   '/api/grupos/:id/roles',
   exigirLogin,
