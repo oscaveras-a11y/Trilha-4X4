@@ -200,14 +200,14 @@ function abrirFuncao(page) {
       break;
 
     case 'criar-trilha':
-  abrirCriarTrilha();
-  break;
+      abrirCriarTrilha();
+      break;
 
-   case 'trilhas':
-     abrirListaTrilhas();
-     break;
-   
-     case 'entrar-trilha':
+    case 'trilhas':
+      abrirListaTrilhas();
+      break;
+
+    case 'entrar-trilha':
       abrirEntrarTrilha();
       break;
 
@@ -216,7 +216,7 @@ function abrirFuncao(page) {
       break;
 
     case 'ia':
-      alert('🤖 O assistente IA 4x4 será aberto aqui.');
+      abrirIA();
       break;
 
     case 'grupos':
@@ -231,6 +231,174 @@ function abrirFuncao(page) {
       abrirMeu4x4();
       break;
   }
+}
+
+function abrirIA() {
+  const existente = document.getElementById('iaOverlay');
+  if (existente) {
+    existente.remove();
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'iaOverlay';
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.background = 'rgba(15, 23, 42, 0.75)';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.padding = '20px';
+  overlay.style.zIndex = '99999';
+
+  const painel = document.createElement('div');
+  painel.style.width = 'min(560px, 100%)';
+  painel.style.maxHeight = '80vh';
+  painel.style.background = '#fff';
+  painel.style.borderRadius = '20px';
+  painel.style.boxShadow = '0 24px 50px rgba(0,0,0,0.25)';
+  painel.style.display = 'flex';
+  painel.style.flexDirection = 'column';
+  painel.style.overflow = 'hidden';
+
+  const topo = document.createElement('div');
+  topo.style.display = 'flex';
+  topo.style.alignItems = 'center';
+  topo.style.justifyContent = 'space-between';
+  topo.style.padding = '18px 20px';
+  topo.style.background = '#111827';
+  topo.style.color = '#fff';
+
+  const titulo = document.createElement('strong');
+  titulo.textContent = '🤖 Assistente 4x4';
+
+  const fechar = document.createElement('button');
+  fechar.type = 'button';
+  fechar.textContent = '✕';
+  fechar.style.border = 'none';
+  fechar.style.background = 'transparent';
+  fechar.style.color = '#fff';
+  fechar.style.cursor = 'pointer';
+  fechar.style.fontSize = '18px';
+  fechar.addEventListener('click', () => overlay.remove());
+
+  topo.appendChild(titulo);
+  topo.appendChild(fechar);
+
+  const chat = document.createElement('div');
+  chat.id = 'iaChat';
+  chat.style.padding = '18px';
+  chat.style.background = '#f8fafc';
+  chat.style.display = 'flex';
+  chat.style.flexDirection = 'column';
+  chat.style.gap = '10px';
+  chat.style.overflowY = 'auto';
+  chat.style.maxHeight = '380px';
+
+  const addMensagem = (texto, tipo = 'bot') => {
+    const msg = document.createElement('div');
+    msg.style.maxWidth = '85%';
+    msg.style.padding = '10px 12px';
+    msg.style.borderRadius = '12px';
+    msg.style.lineHeight = '1.5';
+    msg.style.whiteSpace = 'pre-wrap';
+    msg.style.wordBreak = 'break-word';
+
+    if (tipo === 'user') {
+      msg.style.alignSelf = 'flex-end';
+      msg.style.background = '#dcfce7';
+      msg.style.color = '#14532d';
+    } else {
+      msg.style.alignSelf = 'flex-start';
+      msg.style.background = '#e5e7eb';
+      msg.style.color = '#111827';
+    }
+
+    msg.textContent = texto;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+  };
+
+  addMensagem('Olá! Sou o assistente do Trilha 4X4. Posso te ajudar com planejamento, segurança, rotina e orientação da trilha.', 'bot');
+
+  const formulario = document.createElement('form');
+  formulario.style.display = 'flex';
+  formulario.style.gap = '10px';
+  formulario.style.padding = '16px 18px 18px';
+  formulario.style.borderTop = '1px solid #e5e7eb';
+  formulario.style.background = '#fff';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'Digite sua pergunta...';
+  input.style.flex = '1';
+  input.style.padding = '12px 14px';
+  input.style.border = '1px solid #d1d5db';
+  input.style.borderRadius = '10px';
+  input.style.fontSize = '15px';
+
+  const enviar = document.createElement('button');
+  enviar.type = 'submit';
+  enviar.textContent = 'Enviar';
+  enviar.style.border = 'none';
+  enviar.style.background = '#dc2626';
+  enviar.style.color = '#fff';
+  enviar.style.borderRadius = '10px';
+  enviar.style.padding = '0 16px';
+  enviar.style.fontWeight = 'bold';
+  enviar.style.cursor = 'pointer';
+
+  formulario.appendChild(input);
+  formulario.appendChild(enviar);
+
+  formulario.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const mensagem = input.value.trim();
+    if (!mensagem) return;
+
+    addMensagem(mensagem, 'user');
+    input.value = '';
+    enviar.disabled = true;
+    enviar.textContent = '...';
+
+    try {
+      const resposta = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: mensagem,
+          context: {
+            trailName: document.getElementById('nomeTrilha')?.textContent || 'Trilha 4X4',
+            trailStatus: document.getElementById('modoStatus')?.textContent || 'N/A',
+          },
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.error || 'Não foi possível obter a resposta.');
+      }
+
+      addMensagem(dados.reply || 'Sem resposta', 'bot');
+    } catch (erro) {
+      addMensagem(erro.message || 'Não foi possível conectar com a IA.', 'bot');
+    } finally {
+      enviar.disabled = false;
+      enviar.textContent = 'Enviar';
+      input.focus();
+    }
+  });
+
+  painel.appendChild(topo);
+  painel.appendChild(chat);
+  painel.appendChild(formulario);
+  overlay.appendChild(painel);
+  document.body.appendChild(overlay);
+  input.focus();
 }
 
 async function abrirMeu4x4() {
