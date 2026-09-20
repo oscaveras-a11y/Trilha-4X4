@@ -761,6 +761,30 @@ async function editarGrupo(groupId, nomeAtual) {
   }
 }
 
+async function responderRoleGrupo(groupId, outingId, response) {
+  try {
+    const resposta = await fetch(
+      '/api/grupos/' + encodeURIComponent(groupId) +
+      '/roles/' + encodeURIComponent(outingId) + '/resposta',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response }),
+      }
+    );
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível registrar sua resposta.');
+      return;
+    }
+    document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+    abrirDetalhesGrupo(groupId);
+  } catch (error) {
+    console.error(error);
+    alert('Não foi possível conectar ao servidor.');
+  }
+}
+
 async function abrirDetalhesGrupo(groupId) {
   try {
     const resposta = await fetch(
@@ -805,6 +829,25 @@ async function abrirDetalhesGrupo(groupId) {
           ).join('') || '<p>Nenhum participante.</p>'}
         </div>
 
+        <h3 style="margin-top:22px;">🗓️ Próximos rolês</h3>
+        <div>
+          ${(grupo.outings || []).map((o) => `
+            <div style="padding:14px;margin:8px 0;border:1px solid #ddd;border-radius:12px;">
+              <strong>${escaparTextoTrilha(o.title)}</strong><br>
+              <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · por ${escaparTextoTrilha(o.creatorName)}</small>
+              ${o.meetingPoint ? '<p>📍 ' + escaparTextoTrilha(o.meetingPoint) + '</p>' : ''}
+              ${o.description ? '<p>' + escaparTextoTrilha(o.description) + '</p>' : ''}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','going')">✅ Vou (${o.goingCount || 0})</button>
+                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','maybe')">🤔 Talvez (${o.maybeCount || 0})</button>
+                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','not_going')">❌ Não vou</button>
+              </div>
+            </div>
+          `).join('') || '<p>Nenhum rolê combinado ainda.</p>'}
+        </div>
+
+        <button id="novoRoleGrupo" type="button" style="margin-top:10px;padding:11px;border:0;border-radius:8px;background:#222;color:#fff;">＋ Combinar novo rolê</button>
+
         <h3 style="margin-top:22px;">🛣️ Trilhas do grupo</h3>
         <div>
           ${(grupo.trails || []).map((t) =>
@@ -832,6 +875,31 @@ async function abrirDetalhesGrupo(groupId) {
     document.getElementById('voltarListaGrupos').onclick = () => {
       overlay.remove();
       abrirGrupos();
+    };
+
+    document.getElementById('novoRoleGrupo').onclick = async () => {
+      const title = prompt('Nome do rolê:');
+      if (!title) return;
+      const startsAt = prompt('Data e hora (AAAA-MM-DDTHH:MM):');
+      if (!startsAt) return;
+      const meetingPoint = prompt('Ponto de encontro:') || '';
+      const description = prompt('Observações (opcional):') || '';
+
+      const respostaRole = await fetch(
+        '/api/grupos/' + encodeURIComponent(groupId) + '/roles',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, startsAt, meetingPoint, description }),
+        }
+      );
+      const resultadoRole = await respostaRole.json();
+      if (!respostaRole.ok) {
+        alert(resultadoRole.error || 'Não foi possível criar o rolê.');
+        return;
+      }
+      overlay.remove();
+      abrirDetalhesGrupo(groupId);
     };
 
     const adicionar = document.getElementById('adicionarTrilhaGrupo');
