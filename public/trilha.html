@@ -20,6 +20,41 @@
       margin: 0;
       font-family: Arial, sans-serif;
       background: #f1f5f9;
+
+  document
+    .getElementById('chegueiButton')
+    .addEventListener(
+      'click',
+      () => registrarSeguranca('safe')
+    );
+
+  document
+    .getElementById('aindaTrilhaButton')
+    .addEventListener(
+      'click',
+      () => registrarSeguranca('still_on_trail')
+    );
+
+  document
+    .getElementById('estender6Button')
+    .addEventListener(
+      'click',
+      () => registrarSeguranca('extend', 6)
+    );
+
+  document
+    .getElementById('estender12Button')
+    .addEventListener(
+      'click',
+      () => registrarSeguranca('extend', 12)
+    );
+
+  document
+    .getElementById('estender24Button')
+    .addEventListener(
+      'click',
+      () => registrarSeguranca('extend', 24)
+    );
       color: #111827;
     }
 
@@ -128,6 +163,70 @@
       color: #111827;
     }
 
+
+  async function carregarSeguranca() {
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(trilhaId) +
+        '/seguranca',
+        { cache: 'no-store' }
+      );
+
+      if (!resposta.ok) {
+        return;
+      }
+
+      const dados = await resposta.json();
+      const ultimo = dados.events?.[0];
+      const status = document.getElementById('segurancaStatus');
+
+      if (ultimo && status) {
+        status.textContent =
+          `${ultimo.userName} registrou "${ultimo.action}" em ${dataBR(ultimo.createdAt)}.`;
+      }
+    } catch (erro) {
+      console.warn('Status de segurança indisponível:', erro);
+    }
+  }
+
+  async function registrarSeguranca(action, extensionHours = null) {
+    if (
+      action === 'safe' &&
+      !confirm('Confirmar que você chegou em segurança?')
+    ) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(trilhaId) +
+        '/seguranca',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action, extensionHours }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        mostrarErro(dados.error || 'Não foi possível registrar a segurança.');
+        return;
+      }
+
+      const status = document.getElementById('segurancaStatus');
+      status.textContent = dados.message;
+      carregarTrilha();
+    } catch (erro) {
+      console.error(erro);
+      mostrarErro('Não foi possível conectar ao servidor.');
+    }
+  }
     #sosButton {
       background: #dc2626;
       color: white;
@@ -278,6 +377,32 @@
 
     </div>
 
+    <div class="botoes" style="margin-top:12px;">
+      <button class="botao" id="chegueiButton">
+        SIM, CHEGUEI EM SEGURANÇA
+      </button>
+
+      <button class="botao" id="aindaTrilhaButton">
+        AINDA ESTOU NA TRILHA
+      </button>
+
+      <button class="botao" id="estender6Button">
+        ESTENDER +6 H
+      </button>
+
+      <button class="botao" id="estender12Button">
+        ESTENDER +12 H
+      </button>
+
+      <button class="botao" id="estender24Button">
+        ESTENDER +24 H
+      </button>
+    </div>
+
+    <div class="status" id="segurancaStatus">
+      Nenhuma atualização de segurança registrada.
+    </div>
+
   </section>
 
 
@@ -391,6 +516,8 @@
   let meuSosId = null;
 
   const marcadoresParticipantes = new Map();
+
+  const rotasParticipantes = new Map();
 
 
   /*
@@ -706,6 +833,10 @@
         trilha.participants
       );
 
+      carregarRota();
+
+      carregarSeguranca();
+
     } catch (erro) {
 
       console.error(erro);
@@ -777,6 +908,56 @@
         )
         .join('');
 
+  }
+
+
+  async function carregarRota() {
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(trilhaId) +
+        '/rota',
+        { cache: 'no-store' }
+      );
+
+      if (!resposta.ok) {
+        return;
+      }
+
+      const dados = await resposta.json();
+
+      (dados.points || []).forEach((ponto) => {
+        adicionarPontoRota(ponto);
+      });
+    } catch (erro) {
+      console.warn('Rota ainda não disponível:', erro);
+    }
+  }
+
+
+  function adicionarPontoRota(localizacao) {
+    if (!mapa || !localizacao || !localizacao.userId) {
+      return;
+    }
+
+    let rota = rotasParticipantes.get(localizacao.userId);
+
+    if (!rota) {
+      rota = L.polyline([], {
+        color: localizacao.userId === trilha?.creatorId
+          ? '#dc2626'
+          : '#2563eb',
+        weight: 4,
+        opacity: 0.75,
+      }).addTo(mapa);
+
+      rotasParticipantes.set(localizacao.userId, rota);
+    }
+
+    rota.addLatLng([
+      localizacao.latitude,
+      localizacao.longitude,
+    ]);
   }
 
 
@@ -1272,6 +1453,8 @@
 
       return;
     }
+
+    adicionarPontoRota(localizacao);
 
 
     let marcador =

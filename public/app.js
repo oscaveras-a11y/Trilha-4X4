@@ -5,6 +5,13 @@ let sosAtivo = false;
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .catch((erro) => {
+        console.warn('Offline indisponível:', erro);
+      });
+  }
+
   document.querySelectorAll('.menu-card').forEach((card) => {
     card.addEventListener('click', () => {
       abrirFuncao(card.dataset.page);
@@ -213,7 +220,7 @@ function abrirFuncao(page) {
       break;
 
     case 'grupos':
-      alert('👥 Os grupos serão criados aqui.');
+      abrirGrupos();
       break;
 
     case 'seguranca':
@@ -221,8 +228,177 @@ function abrirFuncao(page) {
       break;
 
     case 'meu-4x4':
-      alert('🚙 O cadastro do seu 4x4 será criado aqui.');
+      abrirMeu4x4();
       break;
+  }
+}
+
+async function abrirMeu4x4() {
+  try {
+    const resposta = await fetch('/api/veiculos', {
+      cache: 'no-store'
+    });
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível carregar seus veículos.');
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.72);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:99999;
+      padding:20px;
+      box-sizing:border-box;
+    `;
+
+    const veiculos = Array.isArray(dados.vehicles)
+      ? dados.vehicles
+      : [];
+
+    overlay.innerHTML = `
+      <div style="background:#fff;color:#000;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;">🚙 Meu 4x4</h2>
+          <button id="fecharMeu4x4" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+        </div>
+        <div id="listaMeusVeiculos" style="margin:18px 0;">
+          ${veiculos.length ? veiculos.map((veiculo) => `
+            <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;line-height:1.6;">
+              <strong>${escaparTextoTrilha(veiculo.brand)} ${escaparTextoTrilha(veiculo.model)}</strong><br>
+              Tipo: ${escaparTextoTrilha(veiculo.type)}<br>
+              Ano: ${veiculo.year || '-'} | Cor: ${escaparTextoTrilha(veiculo.color) || '-'}<br>
+              Placa: ${escaparTextoTrilha(veiculo.plate) || 'não informada'}
+            </div>
+          `).join('') : '<p>Nenhum veículo cadastrado ainda.</p>'}
+        </div>
+        <h3>Adicionar veículo</h3>
+        <div style="display:grid;gap:10px;">
+          <input id="meuVeiculoTipo" placeholder="Tipo (4x4, UTV...)" style="padding:11px;">
+          <input id="meuVeiculoMarca" placeholder="Marca" style="padding:11px;">
+          <input id="meuVeiculoModelo" placeholder="Modelo" style="padding:11px;">
+          <input id="meuVeiculoAno" type="number" placeholder="Ano" style="padding:11px;">
+          <input id="meuVeiculoCor" placeholder="Cor" style="padding:11px;">
+          <input id="meuVeiculoPlaca" placeholder="Placa (opcional)" style="padding:11px;text-transform:uppercase;">
+          <textarea id="meuVeiculoObservacoes" placeholder="Observações" style="padding:11px;min-height:70px;"></textarea>
+          <button id="salvarMeuVeiculo" type="button" style="padding:12px;border:0;border-radius:9px;background:#222;color:#fff;cursor:pointer;font-weight:bold;">Salvar veículo</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.getElementById('fecharMeu4x4').addEventListener('click', () => overlay.remove());
+    document.getElementById('salvarMeuVeiculo').addEventListener('click', async () => {
+      const vehicle = {
+        type: document.getElementById('meuVeiculoTipo').value.trim(),
+        brand: document.getElementById('meuVeiculoMarca').value.trim(),
+        model: document.getElementById('meuVeiculoModelo').value.trim(),
+        year: document.getElementById('meuVeiculoAno').value,
+        color: document.getElementById('meuVeiculoCor').value.trim(),
+        plate: document.getElementById('meuVeiculoPlaca').value.trim(),
+        notes: document.getElementById('meuVeiculoObservacoes').value.trim()
+      };
+
+      if (!vehicle.type || !vehicle.brand || !vehicle.model) {
+        alert('Informe tipo, marca e modelo.');
+        return;
+      }
+
+      const salvar = await fetch('/api/veiculos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle)
+      });
+      const resultado = await salvar.json();
+
+      if (!salvar.ok) {
+        alert(resultado.error || 'Não foi possível cadastrar o veículo.');
+        return;
+      }
+
+      alert('Veículo cadastrado com sucesso.');
+      overlay.remove();
+      abrirMeu4x4();
+    });
+  } catch (error) {
+    console.error('Erro ao carregar veículos:', error);
+    alert('Não foi possível conectar ao servidor.');
+  }
+}
+
+async function abrirGrupos() {
+  try {
+    const resposta = await fetch('/api/grupos', { cache: 'no-store' });
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível carregar os grupos.');
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.72);
+      display:flex;align-items:center;justify-content:center;
+      z-index:99999;padding:20px;box-sizing:border-box;
+    `;
+    const grupos = Array.isArray(dados.groups) ? dados.groups : [];
+
+    overlay.innerHTML = `
+      <div style="background:#fff;color:#000;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;">👥 Meus grupos</h2>
+          <button id="fecharGrupos" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+        </div>
+        <div style="margin:18px 0;">
+          ${grupos.length ? grupos.map((grupo) => `
+            <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;">
+              <strong>${escaparTextoTrilha(grupo.name)}</strong><br>
+              ${grupo.memberCount} participante(s) · ${escaparTextoTrilha(grupo.role)}
+            </div>
+          `).join('') : '<p>Você ainda não participa de grupos.</p>'}
+        </div>
+        <h3>Criar grupo</h3>
+        <div style="display:flex;gap:8px;">
+          <input id="nomeNovoGrupo" placeholder="Nome do grupo" style="flex:1;padding:11px;">
+          <button id="criarNovoGrupo" type="button" style="padding:11px 14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;">Criar</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.getElementById('fecharGrupos').addEventListener('click', () => overlay.remove());
+    document.getElementById('criarNovoGrupo').addEventListener('click', async () => {
+      const name = document.getElementById('nomeNovoGrupo').value.trim();
+      if (!name) {
+        alert('Informe o nome do grupo.');
+        return;
+      }
+
+      const criar = await fetch('/api/grupos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const resultado = await criar.json();
+
+      if (!criar.ok) {
+        alert(resultado.error || 'Não foi possível criar o grupo.');
+        return;
+      }
+
+      overlay.remove();
+      abrirGrupos();
+    });
+  } catch (error) {
+    console.error('Erro ao carregar grupos:', error);
+    alert('Não foi possível conectar ao servidor.');
   }
 }
 
@@ -820,6 +996,141 @@ function abrirTrilha(trilhaId) {
     encodeURIComponent(trilhaId);
 }
 
+function escaparTextoTrilha(valor) {
+  return String(valor || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+async function abrirSolicitacoesAdmin(trilhaId) {
+  try {
+    const resposta = await fetch(
+      '/api/trilhas/' +
+      encodeURIComponent(trilhaId) +
+      '/solicitacoes',
+      { cache: 'no-store' }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(
+        dados.error ||
+        'Não foi possível carregar as solicitações.'
+      );
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.75);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:99999;
+      padding:20px;
+      box-sizing:border-box;
+    `;
+
+    const solicitacoes = Array.isArray(dados.requests)
+      ? dados.requests
+      : [];
+
+    const lista = solicitacoes.length
+      ? solicitacoes.map((solicitacao) => `
+        <div style="border:1px solid #dbe3ea;border-radius:14px;padding:16px;margin-bottom:12px;">
+          <strong>${escaparTextoTrilha(solicitacao.userName)}</strong><br>
+          <small>${escaparTextoTrilha(solicitacao.userEmail)}</small>
+          <p style="line-height:1.6;margin:10px 0;">
+            <strong>Veículo:</strong>
+            ${escaparTextoTrilha(solicitacao.vehicleType)} /
+            ${escaparTextoTrilha(solicitacao.vehicleBrand)}
+            ${escaparTextoTrilha(solicitacao.vehicleModel)}<br>
+            <strong>Ano:</strong> ${solicitacao.vehicleYear || '-'}<br>
+            <strong>Cor:</strong> ${escaparTextoTrilha(solicitacao.vehicleColor) || '-'}<br>
+            <strong>Placa:</strong> ${escaparTextoTrilha(solicitacao.vehiclePlate) || '-'}<br>
+            <strong>Status:</strong> ${escaparTextoTrilha(solicitacao.status)}
+          </p>
+          ${solicitacao.status === 'pending' ? `
+            <div style="display:flex;gap:8px;">
+              <button type="button" onclick="analisarSolicitacao('${trilhaId}', '${solicitacao.id}', 'aceitar', this)" style="flex:1;padding:10px;border:0;border-radius:8px;background:#166534;color:#fff;cursor:pointer;">
+                Aprovar
+              </button>
+              <button type="button" onclick="analisarSolicitacao('${trilhaId}', '${solicitacao.id}', 'recusar', this)" style="flex:1;padding:10px;border:0;border-radius:8px;background:#b91c1c;color:#fff;cursor:pointer;">
+                Rejeitar
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `).join('')
+      : '<p>Nenhuma solicitação encontrada.</p>';
+
+    overlay.innerHTML = `
+      <div style="background:#fff;color:#000;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="margin:0;">Solicitações de entrada</h2>
+          <button id="fecharSolicitacoesAdmin" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+        </div>
+        ${lista}
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document
+      .getElementById('fecharSolicitacoesAdmin')
+      .addEventListener('click', () => overlay.remove());
+  } catch (error) {
+    console.error('Erro ao carregar solicitações:', error);
+    alert('Não foi possível conectar ao servidor.');
+  }
+}
+
+async function analisarSolicitacao(
+  trilhaId,
+  solicitacaoId,
+  acao,
+  botao
+) {
+  botao.disabled = true;
+
+  try {
+    const resposta = await fetch(
+      '/api/trilhas/' +
+      encodeURIComponent(trilhaId) +
+      '/solicitacoes/' +
+      encodeURIComponent(solicitacaoId),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: acao }),
+      }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível analisar a solicitação.');
+      botao.disabled = false;
+      return;
+    }
+
+    alert(dados.message || 'Solicitação atualizada.');
+    document.getElementById('listaTrilhasOverlay')?.remove();
+    await abrirSolicitacoesAdmin(trilhaId);
+  } catch (error) {
+    console.error('Erro ao analisar solicitação:', error);
+    alert('Não foi possível conectar ao servidor.');
+    botao.disabled = false;
+  }
+}
+
 async function abrirListaTrilhas() {
   try {
     const resposta = await fetch('/api/trilhas');
@@ -969,6 +1280,26 @@ async function abrirListaTrilhas() {
 >
   ABRIR TRILHA
 </button>
+${trilha.role === 'admin' ? `
+<button
+  type="button"
+  onclick="abrirSolicitacoesAdmin('${trilha.id}')"
+  style="
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border:1px solid #222;
+    border-radius:10px;
+    background:#fff;
+    color:#222;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:15px;
+  "
+>
+  ADMINISTRAR SOLICITAÇÕES
+</button>
+` : ''}
           </div>
         </div>
       `).join('');
@@ -1218,44 +1549,15 @@ function abrirEntrarTrilha() {
 
         const resposta =
           await fetch(
-            '/api/trilhas/entrar',
+            '/api/trilhas/consulta/' +
+            encodeURIComponent(code),
             {
-              method: 'POST',
-              headers: {
-                'Content-Type':
-                  'application/json'
-              },
-              body:
-                JSON.stringify({
-                  code,
-                  vehicle: null
-                })
+              cache: 'no-store'
             }
           );
 
-        /*
-         * Nesta primeira chamada
-         * o servidor vai pedir o veículo.
-         */
-
         const dados =
           await resposta.json();
-
-        if (
-          resposta.status === 400 &&
-          dados.error &&
-          dados.error.includes(
-            'veículo'
-          )
-        ) {
-
-          mostrarFormularioVeiculo(
-            overlay,
-            code
-          );
-
-          return;
-        }
 
         if (!resposta.ok) {
           alert(
@@ -1265,11 +1567,31 @@ function abrirEntrarTrilha() {
           return;
         }
 
-        alert(
-          'Solicitação enviada com sucesso.'
-        );
+        if (
+          dados.participation?.status === 'active'
+        ) {
+          alert('Você já participa desta trilha.');
+          return;
+        }
 
-        overlay.remove();
+        if (
+          dados.participation?.status === 'pending'
+        ) {
+          alert('Sua solicitação está pendente de aprovação.');
+          return;
+        }
+
+        if (
+          dados.participation?.status === 'rejected'
+        ) {
+          alert('Sua solicitação anterior foi rejeitada. Você pode enviar uma nova solicitação.');
+        }
+
+        mostrarFormularioVeiculo(
+          overlay,
+          code,
+          dados.trail
+        );
 
       } catch (error) {
 
@@ -1283,7 +1605,8 @@ function abrirEntrarTrilha() {
 }
 function mostrarFormularioVeiculo(
   overlay,
-  code
+  code,
+  trilha
 ) {
   const conteudo =
     overlay.querySelector('div');
@@ -1303,6 +1626,22 @@ function mostrarFormularioVeiculo(
       Informe o veículo que será utilizado
       nesta trilha.
     </p>
+
+    <div style="
+      background:#eef6ff;
+      border:1px solid #b7d7f5;
+      border-radius:10px;
+      padding:14px;
+      margin:16px 0;
+      line-height:1.6;
+    ">
+      <strong>${trilha.name}</strong><br>
+      Código: ${trilha.code}<br>
+      Tipo: ${trilha.type}<br>
+      Acesso: ${trilha.visibility}<br>
+      Início: ${new Date(trilha.startAt).toLocaleString('pt-BR')}<br>
+      Término previsto: ${new Date(trilha.plannedEndAt).toLocaleString('pt-BR')}
+    </div>
 
     <label style="
       display:block;

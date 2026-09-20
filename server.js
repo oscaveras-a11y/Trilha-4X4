@@ -964,6 +964,62 @@ app.get(
 
 
 /*
+ * Consulta uma trilha pelo código antes da solicitação.
+ */
+app.get(
+  '/api/trilhas/consulta/:code',
+  exigirLogin,
+  (req, res) => {
+    const codigo = normalizarCodigoTrilha(req.params.code);
+
+    const trilha = db.prepare(`
+      SELECT
+        id,
+        code,
+        name,
+        type,
+        visibility,
+        start_at AS startAt,
+        planned_end_at AS plannedEndAt,
+        safety_end_at AS safetyEndAt,
+        status
+      FROM trails
+      WHERE code = ?
+    `).get(codigo);
+
+    if (!trilha) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Trilha não encontrada.',
+      });
+    }
+
+    const solicitacao = db.prepare(`
+      SELECT status
+      FROM trail_join_requests
+      WHERE trail_id = ?
+        AND user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(trilha.id, req.user.id);
+
+    const membro = db.prepare(`
+      SELECT role, status
+      FROM trail_members
+      WHERE trail_id = ?
+        AND user_id = ?
+    `).get(trilha.id, req.user.id);
+
+    return res.json({
+      ok: true,
+      trail: trilha,
+      participation: membro || solicitacao || null,
+    });
+  }
+);
+
+
+/*
  * =========================================================
  * ABRIR UMA TRILHA
  * =========================================================
@@ -1077,6 +1133,150 @@ app.get(
           'Não foi possível carregar a trilha.',
       });
     }
+  }
+);
+
+
+/*
+ * =========================================================
+ * SEGURANÇA E EXTENSÃO DA TRILHA
+ * =========================================================
+ */
+
+app.get(
+  '/api/trilhas/:id/seguranca',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+
+    if (!usuarioEhMembroDaTrilha(trilhaId, req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Você não participa desta trilha.',
+      });
+    }
+
+    const trilha = db.prepare(`
+      SELECT
+        planned_end_at AS plannedEndAt,
+        safety_end_at AS safetyEndAt
+      FROM trails
+      WHERE id = ?
+    `).get(trilhaId);
+
+    const eventos = db.prepare(`
+      SELECT
+        trail_safety_events.action,
+        trail_safety_events.extension_hours AS extensionHours,
+        trail_safety_events.created_at AS createdAt,
+        users.name AS userName
+      FROM trail_safety_events
+      INNER JOIN users
+        ON users.id = trail_safety_events.user_id
+      WHERE trail_safety_events.trail_id = ?
+      ORDER BY trail_safety_events.created_at DESC
+      LIMIT 50
+    `).all(trilhaId);
+
+    return res.json({
+      ok: true,
+      trail: trilha,
+      events: eventos,
+    });
+  }
+);
+
+app.post(
+  '/api/trilhas/:id/seguranca',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+    const membro = usuarioEhMembroDaTrilha(trilhaId, req.user.id);
+
+    if (!membro) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Você não participa desta trilha.',
+      });
+    }
+
+    const action = typeof req.body?.action === 'string'
+      ? req.body.action.trim()
+      : '';
+    const extensionHours = Number(req.body?.extensionHours || 0);
+
+    if (!['safe', 'still_on_trail', 'extend'].includes(action)) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Ação de segurança inválida.',
+      });
+    }
+
+    if (
+      action === 'extend' &&
+      ![6, 12, 24].includes(extensionHours)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: 'A extensão deve ser de 6, 12 ou 24 horas.',
+      });
+    }
+
+    const agora = new Date().toISOString();
+
+    if (action === 'extend') {
+      const trilha = db.prepare(`
+        SELECT planned_end_at AS plannedEndAt
+        FROM trails
+        WHERE id = ?
+      `).get(trilhaId);
+
+      const novoFim = new Date(
+        new Date(trilha.plannedEndAt).getTime() +
+        extensionHours * 60 * 60 * 1000
+      );
+      const novaSeguranca = new Date(
+        novoFim.getTime() + 24 * 60 * 60 * 1000
+      );
+
+      db.prepare(`
+        UPDATE trails
+        SET planned_end_at = ?, safety_end_at = ?
+        WHERE id = ?
+      `).run(
+        novoFim.toISOString(),
+        novaSeguranca.toISOString(),
+        trilhaId
+      );
+    }
+
+    db.prepare(`
+      INSERT INTO trail_safety_events (
+        id,
+        trail_id,
+        user_id,
+        action,
+        extension_hours,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      crypto.randomUUID(),
+      trilhaId,
+      req.user.id,
+      action,
+      action === 'extend' ? extensionHours : null,
+      agora
+    );
+
+    return res.json({
+      ok: true,
+      message: action === 'safe'
+        ? 'Chegada em segurança registrada.'
+        : action === 'still_on_trail'
+          ? 'A permanência na trilha foi registrada.'
+          : `Prazo estendido por ${extensionHours} horas.`,
+    });
   }
 );
 
@@ -1241,6 +1441,27 @@ app.post(
           localizacao
         );
 
+      db.prepare(`
+        INSERT INTO trail_location_points (
+          id,
+          trail_id,
+          user_id,
+          latitude,
+          longitude,
+          accuracy,
+          recorded_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        crypto.randomUUID(),
+        trilhaId,
+        req.user.id,
+        latitude,
+        longitude,
+        localizacao.accuracy,
+        agora
+      );
+
 
       transmitirEventoTrilha(
         trilhaId,
@@ -1268,6 +1489,46 @@ app.post(
           'Não foi possível atualizar sua localização.',
       });
     }
+  }
+);
+
+
+/*
+ * Retorna os pontos gravados da trilha.
+ */
+app.get(
+  '/api/trilhas/:id/rota',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+
+    if (!usuarioEhMembroDaTrilha(trilhaId, req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Você não participa desta trilha.',
+      });
+    }
+
+    const pontos = db.prepare(`
+      SELECT
+        trail_location_points.id,
+        trail_location_points.user_id AS userId,
+        users.name,
+        trail_location_points.latitude,
+        trail_location_points.longitude,
+        trail_location_points.accuracy,
+        trail_location_points.recorded_at AS recordedAt
+      FROM trail_location_points
+      INNER JOIN users
+        ON users.id = trail_location_points.user_id
+      WHERE trail_location_points.trail_id = ?
+      ORDER BY trail_location_points.recorded_at ASC
+    `).all(trilhaId);
+
+    return res.json({
+      ok: true,
+      points: pontos,
+    });
   }
 );
 
@@ -1778,6 +2039,104 @@ app.delete(
  */
 /*
  * =========================================================
+ * GRUPOS
+ * =========================================================
+ */
+
+app.post(
+  '/api/grupos',
+  exigirLogin,
+  (req, res) => {
+    const name = limparTexto(req.body?.name, 100, '');
+
+    if (name.length < 2) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Informe um nome válido para o grupo.',
+      });
+    }
+
+    const id = crypto.randomUUID();
+    const agora = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO groups (id, name, creator_id, created_at)
+      VALUES (?, ?, ?, ?)
+    `).run(id, name, req.user.id, agora);
+
+    db.prepare(`
+      INSERT INTO group_members (group_id, user_id, role, joined_at)
+      VALUES (?, ?, 'admin', ?)
+    `).run(id, req.user.id, agora);
+
+    return res.status(201).json({
+      ok: true,
+      group: { id, name, role: 'admin' },
+    });
+  }
+);
+
+app.get(
+  '/api/grupos',
+  exigirLogin,
+  (req, res) => {
+    const groups = db.prepare(`
+      SELECT
+        groups.id,
+        groups.name,
+        group_members.role,
+        COUNT(all_members.user_id) AS memberCount
+      FROM group_members
+      INNER JOIN groups
+        ON groups.id = group_members.group_id
+      INNER JOIN group_members AS all_members
+        ON all_members.group_id = groups.id
+      WHERE group_members.user_id = ?
+      GROUP BY groups.id, groups.name, group_members.role
+      ORDER BY groups.created_at DESC
+    `).all(req.user.id);
+
+    return res.json({ ok: true, groups });
+  }
+);
+
+app.post(
+  '/api/grupos/:id/trilhas',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const trailId = req.body?.trailId;
+    const grupo = db.prepare(`
+      SELECT role FROM group_members
+      WHERE group_id = ? AND user_id = ?
+    `).get(groupId, req.user.id);
+
+    if (!grupo || grupo.role !== 'admin') {
+      return res.status(403).json({
+        ok: false,
+        error: 'Somente o administrador do grupo pode adicionar trilhas.',
+      });
+    }
+
+    if (!db.prepare('SELECT id FROM trails WHERE id = ?').get(trailId)) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Trilha não encontrada.',
+      });
+    }
+
+    db.prepare(`
+      INSERT OR IGNORE INTO group_trails (group_id, trail_id, added_at)
+      VALUES (?, ?, ?)
+    `).run(groupId, trailId, new Date().toISOString());
+
+    return res.json({ ok: true, message: 'Trilha adicionada ao grupo.' });
+  }
+);
+
+
+/*
+ * =========================================================
  * PARTICIPAÇÃO / CONVITES / VEÍCULOS
  * =========================================================
  */
@@ -2102,7 +2461,8 @@ app.post(
             name,
             type,
             visibility,
-            status
+            status,
+            creator_id AS creatorId
           FROM trails
           WHERE code = ?
         `).get(codigo);
@@ -2329,6 +2689,11 @@ app.post(
       const requestId =
         crypto.randomUUID();
 
+      const statusInicial =
+        trilha.visibility === 'publica'
+          ? 'accepted'
+          : 'pending';
+
 
       db.prepare(`
         INSERT INTO trail_join_requests (
@@ -2345,7 +2710,7 @@ app.post(
           status,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         requestId,
         trilha.id,
@@ -2357,22 +2722,59 @@ app.post(
         dadosVeiculo.color,
         dadosVeiculo.plate,
         dadosVeiculo.notes,
+        statusInicial,
         agora
       );
+
+      if (statusInicial === 'accepted') {
+        db.prepare(`
+          INSERT INTO trail_members (
+            trail_id,
+            user_id,
+            role,
+            status,
+            joined_at
+          )
+          VALUES (?, ?, 'member', 'active', ?)
+          ON CONFLICT(trail_id, user_id)
+          DO UPDATE SET
+            role = 'member',
+            status = 'active',
+            joined_at = excluded.joined_at
+        `).run(
+          trilha.id,
+          req.user.id,
+          agora
+        );
+
+        db.prepare(`
+          UPDATE trail_join_requests
+          SET
+            reviewed_at = ?,
+            reviewed_by = ?
+          WHERE id = ?
+        `).run(
+          agora,
+          trilha.creatorId || null,
+          requestId
+        );
+      }
 
 
       return res.status(201).json({
         ok: true,
 
         message:
-          'Solicitação enviada ao administrador da trilha.',
+          statusInicial === 'accepted'
+            ? 'Entrada aprovada automaticamente na trilha pública.'
+            : 'Solicitação enviada ao administrador da trilha.',
 
         request: {
           id: requestId,
           trailId: trilha.id,
           code: trilha.code,
           trailName: trilha.name,
-          status: 'pending',
+          status: statusInicial,
         },
       });
 
@@ -2929,6 +3331,30 @@ app.post(
           ? req.body.message.trim()
           : '';
 
+      const usuario = usuarioAtual(req);
+      const veiculo = usuario
+        ? db.prepare(`
+            SELECT type, brand, model, year, color, plate
+            FROM vehicles
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+          `).get(usuario.id)
+        : null;
+      const contexto = req.body?.context || {};
+      const contextoTexto = [
+        usuario ? `Usuário: ${usuario.name}.` : '',
+        veiculo
+          ? `Veículo: ${veiculo.type} ${veiculo.brand} ${veiculo.model}${veiculo.year ? `, ${veiculo.year}` : ''}.`
+          : '',
+        contexto.trailName
+          ? `Trilha atual: ${String(contexto.trailName).slice(0, 120)}.`
+          : '',
+        contexto.trailStatus
+          ? `Status da trilha: ${String(contexto.trailStatus).slice(0, 40)}.`
+          : '',
+      ].filter(Boolean).join(' ');
+
 
       if (!mensagem) {
         return res.status(400).json({
@@ -2967,7 +3393,7 @@ app.post(
             'gpt-4o-mini',
 
           input:
-            mensagem,
+            `Você é o assistente do Trilha 4X4. Use o contexto fornecido para orientar com segurança, sem inventar dados.\nContexto: ${contextoTexto || 'nenhum'}\nMensagem: ${mensagem}`,
         });
 
 
