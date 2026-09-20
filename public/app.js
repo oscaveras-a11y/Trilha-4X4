@@ -1531,9 +1531,15 @@ async function analisarSolicitacao(
 
 async function abrirListaTrilhas() {
   try {
-    const resposta = await fetch('/api/trilhas');
+    const [resposta, respostaSolicitacoes] = await Promise.all([
+      fetch('/api/trilhas', { cache: 'no-store' }),
+      fetch('/api/trilhas/solicitacoes/minhas', { cache: 'no-store' }),
+    ]);
 
     const dados = await resposta.json();
+    const dadosSolicitacoes = respostaSolicitacoes.ok
+      ? await respostaSolicitacoes.json()
+      : { requests: [] };
 
     if (!resposta.ok) {
       alert(
@@ -1546,6 +1552,40 @@ async function abrirListaTrilhas() {
     const trilhas = Array.isArray(dados.trails)
       ? dados.trails
       : [];
+
+    const idsAtivos = new Set(trilhas.map((trilha) => trilha.id));
+    const solicitacoes = Array.isArray(dadosSolicitacoes.requests)
+      ? dadosSolicitacoes.requests.filter((item) => !idsAtivos.has(item.trailId))
+      : [];
+
+    const statusSolicitacao = {
+      pending: ['⏳ Aguardando aprovação', '#92400e', '#fef3c7'],
+      accepted: ['✅ Aprovado', '#166534', '#dcfce7'],
+      rejected: ['❌ Recusado', '#991b1b', '#fee2e2'],
+    };
+
+    const solicitacoesHtml = solicitacoes.length
+      ? `
+        <h3 style="margin:22px 0 10px;">Minhas solicitações</h3>
+        ${solicitacoes.map((item) => {
+          const visual = statusSolicitacao[item.status] || [item.status, '#334155', '#e2e8f0'];
+          return `
+            <div style="border:1px solid #dbe3ea;border-radius:14px;padding:15px;margin-bottom:10px;background:#fff;">
+              <strong>${escaparTextoTrilha(item.name)}</strong>
+              <div style="margin-top:5px;color:#64748b;font-size:13px;">${escaparTextoTrilha(item.code)}</div>
+              <div style="display:inline-block;margin-top:10px;padding:6px 9px;border-radius:9px;background:${visual[2]};color:${visual[1]};font-weight:bold;font-size:13px;">
+                ${visual[0]}
+              </div>
+              ${item.status === 'rejected' ? `
+                <button type="button" onclick="navegarParaModulo('entrar-trilha')" style="display:block;margin-top:10px;padding:9px 12px;border:0;border-radius:8px;cursor:pointer;">
+                  Fazer nova solicitação
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      `
+      : '';
 
     const overlay = document.createElement('div');
 
@@ -1750,6 +1790,7 @@ ${trilha.role === 'admin' ? `
         </div>
 
         ${conteudo}
+        ${solicitacoesHtml}
 
         <button
           id="fecharListaTrilhasRodape"
