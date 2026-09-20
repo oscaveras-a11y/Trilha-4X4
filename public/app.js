@@ -280,6 +280,36 @@ function carregarRotaDaInterface() {
   else mostrarHome();
 }
 
+function anexarPainelAoModulo(elemento) {
+  const destino = document.getElementById('conteudoModulo');
+  if (!destino || !document.body.classList.contains('module-open') || !elemento) {
+    return false;
+  }
+
+  elemento.classList.add('painel-modulo-embutido');
+  elemento.style.position = 'relative';
+  elemento.style.inset = 'auto';
+  elemento.style.zIndex = '1';
+  elemento.style.background = 'transparent';
+  elemento.style.padding = '0';
+  elemento.style.display = 'block';
+  elemento.style.width = '100%';
+  elemento.style.minHeight = '0';
+
+  destino.appendChild(elemento);
+
+  const painel = elemento.firstElementChild;
+  if (painel) {
+    painel.style.maxWidth = 'none';
+    painel.style.width = '100%';
+    painel.style.maxHeight = 'none';
+    painel.style.margin = '0';
+    painel.style.borderRadius = '18px';
+  }
+
+  return true;
+}
+
 function abrirFuncao(page) {
   switch (page) {
     case 'mapa':
@@ -484,7 +514,9 @@ function abrirIA() {
   painel.appendChild(chat);
   painel.appendChild(formulario);
   overlay.appendChild(painel);
-  document.body.appendChild(overlay);
+  if (!anexarPainelAoModulo(overlay)) {
+    document.body.appendChild(overlay);
+  }
   input.focus();
 }
 
@@ -550,7 +582,9 @@ async function abrirMeu4x4() {
       </div>
     `;
 
+    if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
+  }
     document.getElementById('fecharMeu4x4').addEventListener('click', () => overlay.remove());
     document.getElementById('salvarMeuVeiculo').addEventListener('click', async () => {
       const vehicle = {
@@ -678,7 +712,9 @@ async function abrirGrupos() {
       </div>
     `;
 
+    if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
+  }
     document.getElementById('fecharGrupos').addEventListener('click', () => overlay.remove());
     document.getElementById('criarNovoGrupo').addEventListener('click', async () => {
       const name = document.getElementById('nomeNovoGrupo').value.trim();
@@ -1192,7 +1228,9 @@ function abrirCriarTrilha() {
 
   </div>
 `;
-  document.body.appendChild(overlay);
+  if (!anexarPainelAoModulo(overlay)) {
+    document.body.appendChild(overlay);
+  }
 
   document
     .getElementById('fecharCriarTrilha')
@@ -1386,7 +1424,9 @@ async function abrirSolicitacoesAdmin(trilhaId) {
       </div>
     `;
 
+    if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
+  }
     document
       .getElementById('fecharSolicitacoesAdmin')
       .addEventListener('click', () => overlay.remove());
@@ -1677,7 +1717,9 @@ ${trilha.role === 'admin' ? `
       </div>
     `;
 
+    if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
+  }
 
     document
       .getElementById('fecharListaTrilhas')
@@ -1821,7 +1863,9 @@ function abrirEntrarTrilha() {
     </div>
   `;
 
-  document.body.appendChild(overlay);
+  if (!anexarPainelAoModulo(overlay)) {
+    document.body.appendChild(overlay);
+  }
 
   document
     .getElementById('fecharEntrarTrilha')
