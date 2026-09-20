@@ -2719,6 +2719,76 @@ app.get(
 
 /*
  * =========================================================
+ * EDITAR VEÍCULO DO USUÁRIO
+ * =========================================================
+ */
+app.put(
+  '/api/veiculos/:id',
+  exigirLogin,
+  (req, res) => {
+    const atual = db.prepare(`
+      SELECT id
+      FROM vehicles
+      WHERE id = ? AND user_id = ?
+    `).get(req.params.id, req.user.id);
+
+    if (!atual) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Veículo não encontrado.',
+      });
+    }
+
+    const type = limparTexto(req.body?.type, 40, '');
+    const brand = limparTexto(req.body?.brand, 80, '');
+    const model = limparTexto(req.body?.model, 80, '');
+
+    if (!type || !brand || !model) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Informe tipo, marca e modelo.',
+      });
+    }
+
+    let year = null;
+    if (req.body?.year !== undefined && req.body?.year !== null && req.body?.year !== '') {
+      year = Number(req.body.year);
+      const anoMaximo = new Date().getFullYear() + 1;
+      if (!Number.isInteger(year) || year < 1900 || year > anoMaximo) {
+        return res.status(400).json({
+          ok: false,
+          error: 'Informe um ano válido.',
+        });
+      }
+    }
+
+    const color = limparTexto(req.body?.color, 40, null);
+    const plate = limparTexto(req.body?.plate, 20, null);
+    const notes = limparTexto(req.body?.notes, 300, null);
+
+    db.prepare(`
+      UPDATE vehicles
+      SET type = ?, brand = ?, model = ?, year = ?, color = ?, plate = ?, notes = ?
+      WHERE id = ? AND user_id = ?
+    `).run(
+      type, brand, model, year, color, plate, notes,
+      req.params.id, req.user.id
+    );
+
+    return res.json({
+      ok: true,
+      message: 'Veículo atualizado com sucesso.',
+      vehicle: {
+        id: req.params.id,
+        type, brand, model, year, color, plate, notes,
+      },
+    });
+  }
+);
+
+
+/*
+ * =========================================================
  * SOLICITAR PARTICIPAÇÃO POR CÓDIGO
  * =========================================================
  */
