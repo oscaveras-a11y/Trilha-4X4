@@ -3938,40 +3938,29 @@ app.post(
        * somente depois da aprovação.
        */
 
-      db.prepare(`
-        INSERT INTO trail_members (
-          trail_id,
-          user_id,
-          role,
-          status,
-          joined_at
-        )
-        VALUES (?, ?, 'member', 'active', ?)
+      const aceitarSolicitacao = db.transaction(() => {
+        db.prepare(`
+          INSERT INTO trail_members (
+            trail_id, user_id, role, status, joined_at
+          )
+          VALUES (?, ?, 'member', 'active', ?)
+          ON CONFLICT(trail_id, user_id)
+          DO UPDATE SET role = 'member', status = 'active', joined_at = excluded.joined_at
+        `).run(trilhaId, solicitacao.user_id, agora);
 
-        ON CONFLICT(trail_id, user_id)
-        DO UPDATE SET
-          role = 'member',
-          status = 'active',
-          joined_at = excluded.joined_at
-      `).run(
-        trilhaId,
-        solicitacao.user_id,
-        agora
-      );
+        db.prepare(`
+          UPDATE trail_join_requests
+          SET status = 'accepted', reviewed_at = ?, reviewed_by = ?
+          WHERE id = ?
+        `).run(agora, req.user.id, requestId);
 
-
-      db.prepare(`
-        UPDATE trail_join_requests
-        SET
-          status = 'accepted',
-          reviewed_at = ?,
-          reviewed_by = ?
-        WHERE id = ?
-      `).run(
-        agora,
-        req.user.id,
-        requestId
-      );
+        db.prepare(`
+          UPDATE trail_join_requests
+          SET status = 'rejected', reviewed_at = ?, reviewed_by = ?
+          WHERE trail_id = ? AND user_id = ? AND status = 'pending' AND id <> ?
+        `).run(agora, req.user.id, trilhaId, solicitacao.user_id, requestId);
+      });
+      aceitarSolicitacao();
 
 
       return res.json({
