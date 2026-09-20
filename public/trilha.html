@@ -424,6 +424,14 @@
     <div id="rotaPlanejadaStatus" class="status">
       Carregando rota planejada...
     </div>
+    <div id="rotaProximoPasso" style="display:none;margin:14px 0;padding:16px;border:1px solid #444;border-radius:14px;background:#171717;">
+      <strong style="display:block;margin-bottom:6px;">🧭 Próximo passo: criar a rota</strong>
+      <span style="display:block;margin-bottom:12px;">Escolha como deseja preparar o caminho desta trilha.</span>
+      <div class="botoes">
+        <button class="botao" id="criarRotaMapaButton">🗺️ DESENHAR NO MAPA</button>
+        <button class="botao" id="criarRotaGpsAtalhoButton">📡 GRAVAR COM GPS</button>
+      </div>
+    </div>
 
     <div id="editorRota" style="display:none;margin:12px 0;">
       <p style="margin-top:0;">
@@ -1050,6 +1058,14 @@
         ? `🗺️ Rota planejada disponível com ${rotaPlanejadaPontos.length} pontos.`
         : 'O administrador ainda não criou uma rota para esta trilha.';
 
+      const proximoPasso = document.getElementById('rotaProximoPasso');
+      if (proximoPasso) {
+        proximoPasso.style.display =
+          trilha && trilha.role === 'admin' && rotaPlanejadaPontos.length < 2
+            ? 'block'
+            : 'none';
+      }
+
       desenharRotaPlanejada();
     } catch (erro) {
       console.warn('Rota planejada indisponível:', erro);
@@ -1085,6 +1101,12 @@
         [latitude, longitude]
       );
       if (distancia < 5) return;
+    }
+
+    if (rotaPlanejadaPontos.length >= 500) {
+      finalizarGravacaoRotaGps();
+      alert('A gravação atingiu o limite de 500 pontos. Revise e salve a rota.');
+      return;
     }
 
     rotaPlanejadaPontos.push({ latitude, longitude });
@@ -1180,6 +1202,12 @@
     }
 
     editor.style.display = 'block';
+
+    document.getElementById('criarRotaMapaButton').onclick = () => {
+      if (!editandoRota) document.getElementById('editarRotaButton').click();
+      document.getElementById('mapa').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    document.getElementById('criarRotaGpsAtalhoButton').onclick = iniciarGravacaoRotaGps;
 
     document.getElementById('gravarRotaGpsButton').onclick = iniciarGravacaoRotaGps;
     document.getElementById('pausarRotaGpsButton').onclick = alternarPausaRotaGps;
