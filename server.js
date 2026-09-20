@@ -2529,7 +2529,7 @@ app.get(
 
     const outings = db.prepare(`
       SELECT o.id, o.title, o.description, o.meeting_point AS meetingPoint,
-             o.starts_at AS startsAt, o.status, o.creator_id AS creatorId, u.name AS creatorName,
+             o.starts_at AS startsAt, o.status, o.trail_id AS trailId, o.creator_id AS creatorId, u.name AS creatorName,
              r.response AS myResponse,
              SUM(CASE WHEN all_r.response = 'going' THEN 1 ELSE 0 END) AS goingCount,
              SUM(CASE WHEN all_r.response = 'maybe' THEN 1 ELSE 0 END) AS maybeCount
@@ -2678,6 +2678,42 @@ app.put(
       SET title = ?, description = ?, meeting_point = ?, starts_at = ?
       WHERE id = ? AND group_id = ?
     `).run(title, description, meetingPoint, new Date(startsAt).toISOString(), outingId, groupId);
+    return res.json({ ok: true });
+  }
+);
+
+app.post(
+  '/api/grupos/:groupId/roles/:outingId/vincular-trilha',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, outingId } = req.params;
+    const trailId = req.body?.trailId;
+    const member = db.prepare('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?')
+      .get(groupId, req.user.id);
+    if (!member || member.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'Somente administradores podem vincular a trilha.' });
+    }
+
+    const outing = db.prepare(
+      "SELECT trail_id AS trailId FROM group_outings WHERE id = ? AND group_id = ? AND status = 'confirmed'"
+    ).get(outingId, groupId);
+    if (!outing) return res.status(400).json({ ok: false, error: 'Confirme o passeio antes de criar a trilha.' });
+    if (outing.trailId) return res.status(409).json({ ok: false, error: 'Este passeio já possui uma trilha.' });
+
+    const trailAdmin = db.prepare(`
+      SELECT 1 FROM trail_members
+      WHERE trail_id = ? AND user_id = ? AND role = 'admin' AND status = 'active'
+    `).get(trailId, req.user.id);
+    if (!trailAdmin) return res.status(403).json({ ok: false, error: 'Você precisa ser administrador da trilha.' });
+
+    const agora = new Date().toISOString();
+    const transaction = db.transaction(() => {
+      db.prepare('UPDATE group_outings SET trail_id = ? WHERE id = ? AND group_id = ?')
+        .run(trailId, outingId, groupId);
+      db.prepare('INSERT OR IGNORE INTO group_trails (group_id, trail_id, added_at) VALUES (?, ?, ?)')
+        .run(groupId, trailId, agora);
+    });
+    transaction();
     return res.json({ ok: true });
   }
 );
