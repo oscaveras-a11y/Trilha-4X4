@@ -571,6 +571,47 @@ function abrirIA() {
   input.focus();
 }
 
+async function editarMeuVeiculo(veiculo) {
+  const type = prompt('Tipo do veículo:', veiculo.type || '');
+  if (type === null) return;
+  const brand = prompt('Marca:', veiculo.brand || '');
+  if (brand === null) return;
+  const model = prompt('Modelo:', veiculo.model || '');
+  if (model === null) return;
+  const year = prompt('Ano (opcional):', veiculo.year || '');
+  if (year === null) return;
+  const color = prompt('Cor (opcional):', veiculo.color || '');
+  if (color === null) return;
+  const plate = prompt('Placa (opcional):', veiculo.plate || '');
+  if (plate === null) return;
+  const notes = prompt('Observações (opcional):', veiculo.notes || '');
+  if (notes === null) return;
+
+  const resposta = await fetch('/api/veiculos/' + encodeURIComponent(veiculo.id), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: type.trim(),
+      brand: brand.trim(),
+      model: model.trim(),
+      year: year.trim(),
+      color: color.trim(),
+      plate: plate.trim().toUpperCase(),
+      notes: notes.trim(),
+    }),
+  });
+
+  const dados = await resposta.json();
+  if (!resposta.ok) {
+    alert(dados.error || 'Não foi possível editar o veículo.');
+    return;
+  }
+
+  alert('Veículo atualizado com sucesso.');
+  document.getElementById('solicitacoesAdminOverlay')?.remove();
+  abrirMeu4x4();
+}
+
 async function abrirMeu4x4() {
   try {
     const resposta = await fetch('/api/veiculos', {
@@ -616,6 +657,11 @@ async function abrirMeu4x4() {
               Tipo: ${escaparTextoTrilha(veiculo.type)}<br>
               Ano: ${veiculo.year || '-'} | Cor: ${escaparTextoTrilha(veiculo.color) || '-'}<br>
               Placa: ${escaparTextoTrilha(veiculo.plate) || 'não informada'}
+              <button type="button"
+                onclick='editarMeuVeiculo(${JSON.stringify(veiculo)})'
+                style="display:block;margin-top:10px;padding:8px 11px;border:1px solid #222;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold;">
+                ✏️ Editar veículo
+              </button>
             </div>
           `).join('') : '<p>Nenhum veículo cadastrado ainda.</p>'}
         </div>
