@@ -261,6 +261,10 @@
       ...
     </div>
 
+    <div id="adminTrilhaAcoes" class="botoes" style="display:none;margin:14px 0;">
+      <button class="botao" id="editarDadosTrilhaButton">⚙️ EDITAR TRILHA</button>
+    </div>
+
     <div class="informacoes">
 
       <div class="info">
@@ -1092,6 +1096,65 @@
   }
 
 
+  function valorLocalData(iso) {
+    if (!iso) return '';
+    const data = new Date(iso);
+    const local = new Date(data.getTime() - data.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+  }
+
+  async function editarDadosTrilha() {
+    if (!trilha || trilha.role !== 'admin') return;
+
+    const name = prompt('Nome da trilha:', trilha.name || '');
+    if (name === null) return;
+
+    const startAt = prompt(
+      'Início (AAAA-MM-DDTHH:MM):',
+      valorLocalData(trilha.startAt)
+    );
+    if (startAt === null) return;
+
+    const plannedEndAt = prompt(
+      'Término previsto (AAAA-MM-DDTHH:MM):',
+      valorLocalData(trilha.plannedEndAt)
+    );
+    if (plannedEndAt === null) return;
+
+    const releaseAt = prompt(
+      'Liberação da rota (vazio = imediata):',
+      valorLocalData(trilha.releaseAt)
+    );
+    if (releaseAt === null) return;
+
+    const resposta = await fetch(
+      '/api/trilhas/' + encodeURIComponent(trilhaId),
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          type: trilha.type,
+          visibility: trilha.visibility,
+          startAt,
+          plannedEndAt,
+          releaseAt: releaseAt.trim() || null,
+          status: trilha.status,
+        }),
+      }
+    );
+
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível editar a trilha.');
+      return;
+    }
+
+    alert('Trilha atualizada com sucesso.');
+    await carregarTrilha();
+  }
+
+
   /*
    * CARREGAR TRILHA
    */
@@ -1209,6 +1272,10 @@
       mostrarParticipantes(
         trilha.participants
       );
+
+      const adminAcoes = document.getElementById('adminTrilhaAcoes');
+      adminAcoes.style.display = trilha.role === 'admin' ? 'flex' : 'none';
+      document.getElementById('editarDadosTrilhaButton').onclick = editarDadosTrilha;
 
       configurarEditorRota();
       carregarRotaPlanejada();
