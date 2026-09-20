@@ -797,6 +797,53 @@ async function removerMembroGrupo(groupId, userId, name) {
   abrirDetalhesGrupo(groupId);
 }
 
+async function editarRoleGrupo(groupId, outingId, titleEncoded, meetingEncoded, descriptionEncoded, startsAt) {
+  const title = prompt('Nome do passeio:', decodeURIComponent(titleEncoded));
+  if (title === null) return;
+  const dataAtual = new Date(startsAt);
+  const valorData = Number.isNaN(dataAtual.getTime()) ? '' : dataAtual.toISOString().slice(0, 16);
+  const novaData = prompt('Data e hora (AAAA-MM-DDTHH:MM):', valorData);
+  if (novaData === null) return;
+  const meetingPoint = prompt('Ponto de encontro:', decodeURIComponent(meetingEncoded));
+  if (meetingPoint === null) return;
+  const description = prompt('Observações:', decodeURIComponent(descriptionEncoded));
+  if (description === null) return;
+
+  const resposta = await fetch('/api/grupos/' + encodeURIComponent(groupId) + '/roles/' + encodeURIComponent(outingId), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, startsAt: novaData, meetingPoint, description }),
+  });
+  const dados = await resposta.json();
+  if (!resposta.ok) return alert(dados.error || 'Não foi possível editar o passeio.');
+  document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+  abrirDetalhesGrupo(groupId);
+}
+
+async function alterarStatusRoleGrupo(groupId, outingId, status) {
+  const texto = status === 'confirmed' ? 'confirmar este passeio' : 'cancelar este passeio';
+  if (!confirm('Deseja ' + texto + '?')) return;
+  const resposta = await fetch('/api/grupos/' + encodeURIComponent(groupId) + '/roles/' + encodeURIComponent(outingId) + '/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const dados = await resposta.json();
+  if (!resposta.ok) return alert(dados.error || 'Não foi possível atualizar o passeio.');
+  document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
+  abrirDetalhesGrupo(groupId);
+}
+
+function criarTrilhaDoRole(titleEncoded, startsAt) {
+  const titulo = decodeURIComponent(titleEncoded);
+  const params = new URLSearchParams({
+    page: 'criar-trilha',
+    nome: titulo,
+    inicio: startsAt,
+  });
+  window.location.href = '/?' + params.toString();
+}
+
 async function responderRoleGrupo(groupId, outingId, response) {
   try {
     const resposta = await fetch(
@@ -899,11 +946,22 @@ async function abrirDetalhesGrupo(groupId) {
               <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · por ${escaparTextoTrilha(o.creatorName)}</small>
               ${o.meetingPoint ? '<p>📍 ' + escaparTextoTrilha(o.meetingPoint) + '</p>' : ''}
               ${o.description ? '<p>' + escaparTextoTrilha(o.description) + '</p>' : ''}
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','going')">✅ Vou (${o.goingCount || 0})</button>
-                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','maybe')">🤔 Talvez (${o.maybeCount || 0})</button>
-                <button type="button" onclick="responderRoleGrupo('${grupo.id}','${o.id}','not_going')">❌ Não vou</button>
-              </div>
+              <p><b>${o.status === 'confirmed' ? '✅ Passeio confirmado' : o.status === 'cancelled' ? '🚫 Passeio cancelado' : '🟡 Combinando'}</b></p>
+              ${o.status !== 'cancelled' ? `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <button type="button" style="${o.myResponse === 'going' ? 'font-weight:bold;outline:2px solid #222;' : ''}" onclick="responderRoleGrupo('${grupo.id}','${o.id}','going')">✅ Vou (${o.goingCount || 0})</button>
+                  <button type="button" style="${o.myResponse === 'maybe' ? 'font-weight:bold;outline:2px solid #222;' : ''}" onclick="responderRoleGrupo('${grupo.id}','${o.id}','maybe')">🤔 Talvez (${o.maybeCount || 0})</button>
+                  <button type="button" style="${o.myResponse === 'not_going' ? 'font-weight:bold;outline:2px solid #222;' : ''}" onclick="responderRoleGrupo('${grupo.id}','${o.id}','not_going')">❌ Não vou</button>
+                </div>
+              ` : ''}
+              ${o.status !== 'cancelled' ? `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                  <button type="button" onclick="editarRoleGrupo('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${encodeURIComponent(o.meetingPoint || '')}','${encodeURIComponent(o.description || '')}','${o.startsAt}')">✏️ Editar</button>
+                  ${grupo.role === 'admin' && o.status !== 'confirmed' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','confirmed')">✅ Confirmar passeio</button>` : ''}
+                  ${grupo.role === 'admin' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','cancelled')">Cancelar</button>` : ''}
+                  ${grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
+                </div>
+              ` : ''}
             </div>
           `).join('') || '<p>Nenhum rolê combinado ainda.</p>'}
         </div>
