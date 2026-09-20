@@ -834,12 +834,14 @@ async function alterarStatusRoleGrupo(groupId, outingId, status) {
   abrirDetalhesGrupo(groupId);
 }
 
-function criarTrilhaDoRole(titleEncoded, startsAt) {
+function criarTrilhaDoRole(groupId, outingId, titleEncoded, startsAt) {
   const titulo = decodeURIComponent(titleEncoded);
   const params = new URLSearchParams({
     page: 'criar-trilha',
     nome: titulo,
     inicio: startsAt,
+    grupo: groupId,
+    role: outingId,
   });
   window.location.href = '/?' + params.toString();
 }
@@ -959,7 +961,7 @@ async function abrirDetalhesGrupo(groupId) {
                   <button type="button" onclick="editarRoleGrupo('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${encodeURIComponent(o.meetingPoint || '')}','${encodeURIComponent(o.description || '')}','${o.startsAt}')">✏️ Editar</button>
                   ${grupo.role === 'admin' && o.status !== 'confirmed' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','confirmed')">✅ Confirmar passeio</button>` : ''}
                   ${grupo.role === 'admin' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','cancelled')">Cancelar</button>` : ''}
-                  ${grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
+                  ${o.trailId ? `<button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button>` : grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
                 </div>
               ` : ''}
             </div>
@@ -1451,6 +1453,12 @@ function abrirSeguranca() {
 }
 
 function abrirCriarTrilha() {
+  const contexto = new URLSearchParams(window.location.search);
+  const nomePrefill = contexto.get('nome') || '';
+  const inicioPrefill = contexto.get('inicio') || '';
+  const grupoPrefill = contexto.get('grupo') || '';
+  const rolePrefill = contexto.get('role') || '';
+
   const overlay = document.createElement('div');
 
   overlay.style.cssText = `
@@ -1740,6 +1748,16 @@ function abrirCriarTrilha() {
     document.body.appendChild(overlay);
   }
 
+  if (nomePrefill) document.getElementById('novaTrilhaNome').value = nomePrefill;
+  if (inicioPrefill) {
+    const dataInicio = new Date(inicioPrefill);
+    if (!Number.isNaN(dataInicio.getTime())) {
+      const local = new Date(dataInicio.getTime() - dataInicio.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+      document.getElementById('novaTrilhaInicio').value = local;
+    }
+  }
+
   document
     .getElementById('fecharCriarTrilha')
     .addEventListener('click', () => {
@@ -1827,6 +1845,26 @@ Você é o administrador desta trilha.`
         );
 
         overlay.remove();
+
+        if (dados.trail?.id && grupoPrefill && rolePrefill) {
+          try {
+            const vinculo = await fetch(
+              '/api/grupos/' + encodeURIComponent(grupoPrefill) +
+              '/roles/' + encodeURIComponent(rolePrefill) + '/vincular-trilha',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ trailId: dados.trail.id }),
+              }
+            );
+            const dadosVinculo = await vinculo.json();
+            if (!vinculo.ok) {
+              alert(dadosVinculo.error || 'A trilha foi criada, mas não foi possível vinculá-la ao passeio.');
+            }
+          } catch (erroVinculo) {
+            console.warn('Falha ao vincular trilha ao passeio:', erroVinculo);
+          }
+        }
 
         if (dados.trail?.id) {
           window.location.href =
