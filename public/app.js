@@ -196,9 +196,13 @@ function abrirFuncao(page) {
   abrirCriarTrilha();
   break;
 
-case 'trilhas':
-  abrirListaTrilhas();
-  break;
+   case 'trilhas':
+     abrirListaTrilhas();
+     break;
+   
+     case 'entrar-trilha':
+      abrirEntrarTrilha();
+      break;
 
     case 'navegacao':
       alert('🧭 A navegação será criada aqui.');
@@ -806,9 +810,14 @@ Você é o administrador desta trilha.`
 }
 
 function abrirTrilha(trilhaId) {
-  alert(
-    `🛣️ Trilha selecionada!\n\nID da trilha: ${trilhaId}\n\nA tela da trilha será aberta nesta próxima etapa.`
-  );
+  if (!trilhaId) {
+    alert('ID da trilha não encontrado.');
+    return;
+  }
+
+  window.location.href =
+    '/trilha.html?id=' +
+    encodeURIComponent(trilhaId);
 }
 
 async function abrirListaTrilhas() {
@@ -1052,4 +1061,591 @@ async function abrirListaTrilhas() {
       'Não foi possível carregar as trilhas.'
     );
   }
+}
+function abrirEntrarTrilha() {
+  const overlay = document.createElement('div');
+
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.70);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    padding: 20px;
+    box-sizing: border-box;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:white;
+      color:#000;
+      width:100%;
+      max-width:520px;
+      border-radius:18px;
+      padding:24px;
+      box-sizing:border-box;
+    ">
+
+      <h2 style="
+        margin-top:0;
+        color:#000;
+      ">
+        🚙 Entrar em uma trilha
+      </h2>
+
+      <p style="
+        color:#333;
+        line-height:1.5;
+      ">
+        Informe o ID da trilha recebido pelo administrador.
+      </p>
+
+      <label style="
+        display:block;
+        font-weight:bold;
+        margin-top:16px;
+        margin-bottom:6px;
+      ">
+        ID da trilha
+      </label>
+
+      <input
+        id="codigoEntradaTrilha"
+        type="text"
+        placeholder="Ex.: 4X4-F8K2P"
+        style="
+          width:100%;
+          box-sizing:border-box;
+          padding:13px;
+          border:1px solid #999;
+          border-radius:8px;
+          font-size:16px;
+          text-transform:uppercase;
+        "
+      >
+
+      <div style="
+        background:#eef6ff;
+        border:1px solid #b7d7f5;
+        border-radius:10px;
+        padding:14px;
+        margin-top:16px;
+        line-height:1.5;
+      ">
+        🔐 Em trilhas privadas ou eventos,
+        sua entrada dependerá da aprovação do administrador.
+      </div>
+
+      <div style="
+        display:flex;
+        gap:10px;
+        justify-content:flex-end;
+        margin-top:20px;
+      ">
+
+        <button
+          id="fecharEntrarTrilha"
+          type="button"
+          style="
+            padding:12px 18px;
+            border:1px solid #999;
+            border-radius:8px;
+            background:#fff;
+            color:#000;
+            cursor:pointer;
+          "
+        >
+          Cancelar
+        </button>
+
+        <button
+          id="continuarEntrarTrilha"
+          type="button"
+          style="
+            padding:12px 18px;
+            border:0;
+            border-radius:8px;
+            background:#222;
+            color:#fff;
+            cursor:pointer;
+            font-weight:bold;
+          "
+        >
+          Continuar
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  document
+    .getElementById('fecharEntrarTrilha')
+    .addEventListener('click', () => {
+      overlay.remove();
+    });
+
+  document
+    .getElementById('continuarEntrarTrilha')
+    .addEventListener('click', async () => {
+
+      const code =
+        document
+          .getElementById(
+            'codigoEntradaTrilha'
+          )
+          .value
+          .trim()
+          .toUpperCase();
+
+      if (!code) {
+        alert(
+          'Informe o ID da trilha.'
+        );
+        return;
+      }
+
+      /*
+       * Primeiro localizamos a trilha
+       * pelo código.
+       */
+
+      try {
+
+        const resposta =
+          await fetch(
+            '/api/trilhas/entrar',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/json'
+              },
+              body:
+                JSON.stringify({
+                  code,
+                  vehicle: null
+                })
+            }
+          );
+
+        /*
+         * Nesta primeira chamada
+         * o servidor vai pedir o veículo.
+         */
+
+        const dados =
+          await resposta.json();
+
+        if (
+          resposta.status === 400 &&
+          dados.error &&
+          dados.error.includes(
+            'veículo'
+          )
+        ) {
+
+          mostrarFormularioVeiculo(
+            overlay,
+            code
+          );
+
+          return;
+        }
+
+        if (!resposta.ok) {
+          alert(
+            dados.error ||
+            'Não foi possível localizar a trilha.'
+          );
+          return;
+        }
+
+        alert(
+          'Solicitação enviada com sucesso.'
+        );
+
+        overlay.remove();
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          'Não foi possível conectar ao servidor.'
+        );
+      }
+    });
+}
+function mostrarFormularioVeiculo(
+  overlay,
+  code
+) {
+  const conteudo =
+    overlay.querySelector('div');
+
+  conteudo.innerHTML = `
+    <h2 style="
+      margin-top:0;
+      color:#000;
+    ">
+      🚙 Seu veículo
+    </h2>
+
+    <p style="
+      color:#333;
+      line-height:1.5;
+    ">
+      Informe o veículo que será utilizado
+      nesta trilha.
+    </p>
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Tipo *
+    </label>
+
+    <select
+      id="veiculoTipo"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+      "
+    >
+      <option value="">Selecione</option>
+      <option value="4x4">4x4</option>
+      <option value="UTV">UTV</option>
+      <option value="Quadriciclo">Quadriciclo</option>
+      <option value="Gaiola/Buggy">Gaiola / Buggy</option>
+      <option value="Caminhonete">Caminhonete</option>
+      <option value="SUV">SUV</option>
+      <option value="Outro">Outro</option>
+    </select>
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Marca *
+    </label>
+
+    <input
+      id="veiculoMarca"
+      type="text"
+      placeholder="Ex.: Chevrolet"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+      "
+    >
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Modelo *
+    </label>
+
+    <input
+      id="veiculoModelo"
+      type="text"
+      placeholder="Ex.: S10"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+      "
+    >
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Ano
+    </label>
+
+    <input
+      id="veiculoAno"
+      type="number"
+      placeholder="Ex.: 2014"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+      "
+    >
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Cor
+    </label>
+
+    <input
+      id="veiculoCor"
+      type="text"
+      placeholder="Ex.: vermelho"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+      "
+    >
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Placa
+      <span style="
+        font-weight:normal;
+        color:#777;
+      ">
+        (opcional)
+      </span>
+    </label>
+
+    <input
+      id="veiculoPlaca"
+      type="text"
+      placeholder="Se possuir"
+      style="
+        width:100%;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+        text-transform:uppercase;
+      "
+    >
+
+    <div style="
+      background:#f1f5f9;
+      padding:12px;
+      border-radius:10px;
+      margin-top:14px;
+      line-height:1.5;
+      color:#333;
+    ">
+      ℹ️ A placa não é obrigatória.
+      UTVs, gaiolas, buggies e outros veículos
+      sem placa também podem participar.
+    </div>
+
+    <label style="
+      display:block;
+      font-weight:bold;
+      margin-top:14px;
+      margin-bottom:6px;
+    ">
+      Observação
+    </label>
+
+    <textarea
+      id="veiculoObservacao"
+      placeholder="Alguma informação importante sobre o veículo"
+      style="
+        width:100%;
+        min-height:80px;
+        padding:12px;
+        border:1px solid #999;
+        border-radius:8px;
+        box-sizing:border-box;
+        resize:vertical;
+      "
+    ></textarea>
+
+    <div style="
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:20px;
+    ">
+
+      <button
+        id="cancelarVeiculo"
+        type="button"
+        style="
+          padding:12px 18px;
+          border:1px solid #999;
+          border-radius:8px;
+          background:#fff;
+          cursor:pointer;
+        "
+      >
+        Cancelar
+      </button>
+
+      <button
+        id="enviarSolicitacaoVeiculo"
+        type="button"
+        style="
+          padding:12px 18px;
+          border:0;
+          border-radius:8px;
+          background:#222;
+          color:#fff;
+          cursor:pointer;
+          font-weight:bold;
+        "
+      >
+        Enviar solicitação
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById('cancelarVeiculo')
+    .addEventListener(
+      'click',
+      () => overlay.remove()
+    );
+
+  document
+    .getElementById(
+      'enviarSolicitacaoVeiculo'
+    )
+    .addEventListener(
+      'click',
+      async () => {
+
+        const vehicle = {
+          type:
+            document
+              .getElementById(
+                'veiculoTipo'
+              ).value,
+
+          brand:
+            document
+              .getElementById(
+                'veiculoMarca'
+              ).value.trim(),
+
+          model:
+            document
+              .getElementById(
+                'veiculoModelo'
+              ).value.trim(),
+
+          year:
+            document
+              .getElementById(
+                'veiculoAno'
+              ).value,
+
+          color:
+            document
+              .getElementById(
+                'veiculoCor'
+              ).value.trim(),
+
+          plate:
+            document
+              .getElementById(
+                'veiculoPlaca'
+              ).value.trim(),
+
+          notes:
+            document
+              .getElementById(
+                'veiculoObservacao'
+              ).value.trim()
+        };
+
+
+        if (
+          !vehicle.type ||
+          !vehicle.brand ||
+          !vehicle.model
+        ) {
+          alert(
+            'Preencha tipo, marca e modelo.'
+          );
+          return;
+        }
+
+
+        try {
+
+          const resposta =
+            await fetch(
+              '/api/trilhas/entrar',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type':
+                    'application/json'
+                },
+                body:
+                  JSON.stringify({
+                    code,
+                    vehicle
+                  })
+              }
+            );
+
+
+          const dados =
+            await resposta.json();
+
+
+          if (!resposta.ok) {
+            alert(
+              dados.error ||
+              'Não foi possível enviar a solicitação.'
+            );
+            return;
+          }
+
+
+          alert(
+            '✅ Solicitação enviada!\n\n' +
+            'O administrador da trilha receberá seus dados e deverá aprovar sua participação.'
+          );
+
+
+          overlay.remove();
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            'Não foi possível conectar ao servidor.'
+          );
+        }
+      }
+    );
 }

@@ -943,7 +943,7 @@ app.get(
 
       return res.json({
         ok: true,
-        trails,
+        trails: trilhas,
       });
 
     } catch (error) {
@@ -1776,7 +1776,883 @@ app.delete(
  * A nova página da trilha utiliza
  * exclusivamente as rotas /api/trilhas/:id/sos.
  */
+/*
+ * =========================================================
+ * PARTICIPAÇÃO / CONVITES / VEÍCULOS
+ * =========================================================
+ */
 
+
+/*
+ * Normaliza o código da trilha.
+ *
+ * Aceita:
+ *
+ * 4X4-F8K2P
+ * 4x4-f8k2p
+ *
+ * e transforma em:
+ *
+ * 4X4-F8K2P
+ */
+function normalizarCodigoTrilha(codigo) {
+  if (typeof codigo !== 'string') {
+    return '';
+  }
+
+  return codigo
+    .trim()
+    .toUpperCase();
+}
+
+
+/*
+ * Verifica se o usuário é administrador
+ * da trilha.
+ */
+function usuarioEhAdminDaTrilha(
+  trilhaId,
+  userId
+) {
+  const membro = db.prepare(`
+    SELECT role
+    FROM trail_members
+    WHERE trail_id = ?
+      AND user_id = ?
+      AND status = 'active'
+  `).get(
+    trilhaId,
+    userId
+  );
+
+  return Boolean(
+    membro &&
+    membro.role === 'admin'
+  );
+}
+
+
+/*
+ * =========================================================
+ * CADASTRAR VEÍCULO
+ * =========================================================
+ */
+
+app.post(
+  '/api/veiculos',
+  exigirLogin,
+  (req, res) => {
+    try {
+
+      const {
+        type,
+        brand,
+        model,
+        year,
+        color,
+        plate,
+        notes,
+      } = req.body || {};
+
+
+      const tipo = limparTexto(
+        type,
+        40,
+        ''
+      );
+
+      const marca = limparTexto(
+        brand,
+        80,
+        ''
+      );
+
+      const modelo = limparTexto(
+        model,
+        80,
+        ''
+      );
+
+
+      if (!tipo) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Informe o tipo do veículo.',
+        });
+      }
+
+
+      if (!marca) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Informe a marca do veículo.',
+        });
+      }
+
+
+      if (!modelo) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Informe o modelo do veículo.',
+        });
+      }
+
+
+      let ano = null;
+
+      if (
+        year !== undefined &&
+        year !== null &&
+        year !== ''
+      ) {
+        const numeroAno =
+          Number(year);
+
+        if (
+          !Number.isInteger(numeroAno) ||
+          numeroAno < 1900 ||
+          numeroAno > 2100
+        ) {
+          return res.status(400).json({
+            ok: false,
+            error:
+              'Ano do veículo inválido.',
+          });
+        }
+
+        ano = numeroAno;
+      }
+
+
+      const id =
+        crypto.randomUUID();
+
+      const agora =
+        new Date().toISOString();
+
+
+      db.prepare(`
+        INSERT INTO vehicles (
+          id,
+          user_id,
+          type,
+          brand,
+          model,
+          year,
+          color,
+          plate,
+          notes,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        req.user.id,
+        tipo,
+        marca,
+        modelo,
+        ano,
+        limparTexto(
+          color,
+          40,
+          null
+        ),
+        limparTexto(
+          plate,
+          20,
+          null
+        ),
+        limparTexto(
+          notes,
+          300,
+          null
+        ),
+        agora
+      );
+
+
+      return res.status(201).json({
+        ok: true,
+
+        vehicle: {
+          id,
+          type: tipo,
+          brand: marca,
+          model: modelo,
+          year: ano,
+          color:
+            limparTexto(
+              color,
+              40,
+              null
+            ),
+          plate:
+            limparTexto(
+              plate,
+              20,
+              null
+            ),
+          notes:
+            limparTexto(
+              notes,
+              300,
+              null
+            ),
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao cadastrar veículo:',
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          'Não foi possível cadastrar o veículo.',
+      });
+    }
+  }
+);
+
+
+/*
+ * =========================================================
+ * LISTAR VEÍCULOS DO USUÁRIO
+ * =========================================================
+ */
+
+app.get(
+  '/api/veiculos',
+  exigirLogin,
+  (req, res) => {
+
+    const vehicles =
+      db.prepare(`
+        SELECT
+          id,
+          type,
+          brand,
+          model,
+          year,
+          color,
+          plate,
+          notes,
+          created_at AS createdAt
+        FROM vehicles
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+      `).all(
+        req.user.id
+      );
+
+
+    return res.json({
+      ok: true,
+      vehicles,
+    });
+  }
+);
+
+
+/*
+ * =========================================================
+ * SOLICITAR PARTICIPAÇÃO POR CÓDIGO
+ * =========================================================
+ */
+
+app.post(
+  '/api/trilhas/entrar',
+  exigirLogin,
+  (req, res) => {
+    try {
+
+      const {
+        code,
+        vehicleId,
+        vehicle,
+      } = req.body || {};
+
+
+      const codigo =
+        normalizarCodigoTrilha(
+          code
+        );
+
+
+      if (!codigo) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Informe o ID da trilha.',
+        });
+      }
+
+
+      const trilha =
+        db.prepare(`
+          SELECT
+            id,
+            code,
+            name,
+            type,
+            visibility,
+            status
+          FROM trails
+          WHERE code = ?
+        `).get(codigo);
+
+
+      if (!trilha) {
+        return res.status(404).json({
+          ok: false,
+          error:
+            'Trilha não encontrada.',
+        });
+      }
+
+
+      if (
+        trilha.status !== 'open'
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Esta trilha não está aberta para novas participações.',
+        });
+      }
+
+
+      const membro =
+        db.prepare(`
+          SELECT
+            role,
+            status
+          FROM trail_members
+          WHERE trail_id = ?
+            AND user_id = ?
+        `).get(
+          trilha.id,
+          req.user.id
+        );
+
+
+      if (
+        membro &&
+        membro.status === 'active'
+      ) {
+        return res.status(409).json({
+          ok: false,
+          error:
+            'Você já participa desta trilha.',
+        });
+      }
+
+
+      const solicitacaoExistente =
+        db.prepare(`
+          SELECT
+            id,
+            status
+          FROM trail_join_requests
+          WHERE trail_id = ?
+            AND user_id = ?
+            AND status = 'pending'
+        `).get(
+          trilha.id,
+          req.user.id
+        );
+
+
+      if (solicitacaoExistente) {
+        return res.status(409).json({
+          ok: false,
+          error:
+            'Você já possui uma solicitação pendente para esta trilha.',
+        });
+      }
+
+
+      /*
+       * Primeiro tentamos utilizar
+       * um veículo já cadastrado.
+       */
+
+      let dadosVeiculo = null;
+
+
+      if (vehicleId) {
+
+        dadosVeiculo =
+          db.prepare(`
+            SELECT
+              id,
+              type,
+              brand,
+              model,
+              year,
+              color,
+              plate,
+              notes
+            FROM vehicles
+            WHERE id = ?
+              AND user_id = ?
+          `).get(
+            vehicleId,
+            req.user.id
+          );
+
+
+        if (!dadosVeiculo) {
+          return res.status(400).json({
+            ok: false,
+            error:
+              'Veículo não encontrado.',
+          });
+        }
+      }
+
+
+      /*
+       * Também permitimos enviar
+       * o veículo diretamente.
+       */
+
+      if (!dadosVeiculo && vehicle) {
+
+        const tipo =
+          limparTexto(
+            vehicle.type,
+            40,
+            ''
+          );
+
+        const marca =
+          limparTexto(
+            vehicle.brand,
+            80,
+            ''
+          );
+
+        const modelo =
+          limparTexto(
+            vehicle.model,
+            80,
+            ''
+          );
+
+
+        if (
+          !tipo ||
+          !marca ||
+          !modelo
+        ) {
+          return res.status(400).json({
+            ok: false,
+            error:
+              'Informe tipo, marca e modelo do veículo.',
+          });
+        }
+
+
+        let ano = null;
+
+        if (
+          vehicle.year !== undefined &&
+          vehicle.year !== null &&
+          vehicle.year !== ''
+        ) {
+          const numeroAno =
+            Number(vehicle.year);
+
+          if (
+            !Number.isInteger(numeroAno) ||
+            numeroAno < 1900 ||
+            numeroAno > 2100
+          ) {
+            return res.status(400).json({
+              ok: false,
+              error:
+                'Ano do veículo inválido.',
+            });
+          }
+
+          ano = numeroAno;
+        }
+
+
+        dadosVeiculo = {
+          type: tipo,
+          brand: marca,
+          model: modelo,
+          year: ano,
+          color:
+            limparTexto(
+              vehicle.color,
+              40,
+              null
+            ),
+          plate:
+            limparTexto(
+              vehicle.plate,
+              20,
+              null
+            ),
+          notes:
+            limparTexto(
+              vehicle.notes,
+              300,
+              null
+            ),
+        };
+      }
+
+
+      if (!dadosVeiculo) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Informe o veículo que será utilizado na trilha.',
+        });
+      }
+
+
+      const agora =
+        new Date().toISOString();
+
+
+      const requestId =
+        crypto.randomUUID();
+
+
+      db.prepare(`
+        INSERT INTO trail_join_requests (
+          id,
+          trail_id,
+          user_id,
+          vehicle_type,
+          vehicle_brand,
+          vehicle_model,
+          vehicle_year,
+          vehicle_color,
+          vehicle_plate,
+          vehicle_notes,
+          status,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+      `).run(
+        requestId,
+        trilha.id,
+        req.user.id,
+        dadosVeiculo.type,
+        dadosVeiculo.brand,
+        dadosVeiculo.model,
+        dadosVeiculo.year,
+        dadosVeiculo.color,
+        dadosVeiculo.plate,
+        dadosVeiculo.notes,
+        agora
+      );
+
+
+      return res.status(201).json({
+        ok: true,
+
+        message:
+          'Solicitação enviada ao administrador da trilha.',
+
+        request: {
+          id: requestId,
+          trailId: trilha.id,
+          code: trilha.code,
+          trailName: trilha.name,
+          status: 'pending',
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao solicitar entrada na trilha:',
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          'Não foi possível enviar a solicitação.',
+      });
+    }
+  }
+);
+
+
+/*
+ * =========================================================
+ * ADMINISTRADOR — LISTAR SOLICITAÇÕES
+ * =========================================================
+ */
+
+app.get(
+  '/api/trilhas/:id/solicitacoes',
+  exigirLogin,
+  (req, res) => {
+
+    const trilhaId =
+      req.params.id;
+
+
+    if (
+      !usuarioEhAdminDaTrilha(
+        trilhaId,
+        req.user.id
+      )
+    ) {
+      return res.status(403).json({
+        ok: false,
+        error:
+          'Somente o administrador da trilha pode ver as solicitações.',
+      });
+    }
+
+
+    const solicitacoes =
+      db.prepare(`
+        SELECT
+          trail_join_requests.id,
+          trail_join_requests.status,
+          trail_join_requests.created_at AS createdAt,
+
+          users.id AS userId,
+          users.name AS userName,
+          users.email AS userEmail,
+
+          trail_join_requests.vehicle_type AS vehicleType,
+          trail_join_requests.vehicle_brand AS vehicleBrand,
+          trail_join_requests.vehicle_model AS vehicleModel,
+          trail_join_requests.vehicle_year AS vehicleYear,
+          trail_join_requests.vehicle_color AS vehicleColor,
+          trail_join_requests.vehicle_plate AS vehiclePlate,
+          trail_join_requests.vehicle_notes AS vehicleNotes
+
+        FROM trail_join_requests
+
+        INNER JOIN users
+          ON users.id =
+            trail_join_requests.user_id
+
+        WHERE
+          trail_join_requests.trail_id = ?
+
+        ORDER BY
+          CASE
+            WHEN trail_join_requests.status = 'pending'
+            THEN 0
+            ELSE 1
+          END,
+          trail_join_requests.created_at DESC
+      `).all(
+        trilhaId
+      );
+
+
+    return res.json({
+      ok: true,
+      requests:
+        solicitacoes,
+    });
+  }
+);
+
+
+/*
+ * =========================================================
+ * ADMINISTRADOR — ACEITAR OU RECUSAR
+ * =========================================================
+ */
+
+app.post(
+  '/api/trilhas/:id/solicitacoes/:requestId',
+  exigirLogin,
+  (req, res) => {
+    try {
+
+      const trilhaId =
+        req.params.id;
+
+      const requestId =
+        req.params.requestId;
+
+      const acao =
+        typeof req.body?.action === 'string'
+          ? req.body.action
+              .trim()
+              .toLowerCase()
+          : '';
+
+
+      if (
+        ![
+          'aceitar',
+          'recusar'
+        ].includes(acao)
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'Ação inválida.',
+        });
+      }
+
+
+      if (
+        !usuarioEhAdminDaTrilha(
+          trilhaId,
+          req.user.id
+        )
+      ) {
+        return res.status(403).json({
+          ok: false,
+          error:
+            'Somente o administrador pode analisar solicitações.',
+        });
+      }
+
+
+      const solicitacao =
+        db.prepare(`
+          SELECT
+            *
+          FROM trail_join_requests
+          WHERE id = ?
+            AND trail_id = ?
+        `).get(
+          requestId,
+          trilhaId
+        );
+
+
+      if (!solicitacao) {
+        return res.status(404).json({
+          ok: false,
+          error:
+            'Solicitação não encontrada.',
+        });
+      }
+
+
+      if (
+        solicitacao.status !==
+        'pending'
+      ) {
+        return res.status(409).json({
+          ok: false,
+          error:
+            'Esta solicitação já foi analisada.',
+        });
+      }
+
+
+      const agora =
+        new Date().toISOString();
+
+
+      if (
+        acao === 'recusar'
+      ) {
+
+        db.prepare(`
+          UPDATE trail_join_requests
+          SET
+            status = 'rejected',
+            reviewed_at = ?,
+            reviewed_by = ?
+          WHERE id = ?
+        `).run(
+          agora,
+          req.user.id,
+          requestId
+        );
+
+
+        return res.json({
+          ok: true,
+          message:
+            'Solicitação recusada.',
+        });
+      }
+
+
+      /*
+       * ACEITAR
+       *
+       * O participante entra na trilha
+       * somente depois da aprovação.
+       */
+
+      db.prepare(`
+        INSERT INTO trail_members (
+          trail_id,
+          user_id,
+          role,
+          status,
+          joined_at
+        )
+        VALUES (?, ?, 'member', 'active', ?)
+
+        ON CONFLICT(trail_id, user_id)
+        DO UPDATE SET
+          role = 'member',
+          status = 'active',
+          joined_at = excluded.joined_at
+      `).run(
+        trilhaId,
+        solicitacao.user_id,
+        agora
+      );
+
+
+      db.prepare(`
+        UPDATE trail_join_requests
+        SET
+          status = 'accepted',
+          reviewed_at = ?,
+          reviewed_by = ?
+        WHERE id = ?
+      `).run(
+        agora,
+        req.user.id,
+        requestId
+      );
+
+
+      return res.json({
+        ok: true,
+        message:
+          'Participante aceito na trilha.',
+      });
+
+    } catch (error) {
+
+      console.error(
+        'Erro ao analisar solicitação:',
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        error:
+          'Não foi possível analisar a solicitação.',
+      });
+    }
+  }
+);
 
 /*
  * SSE global antigo.
