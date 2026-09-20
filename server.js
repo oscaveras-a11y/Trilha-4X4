@@ -1194,6 +1194,86 @@ app.get(
 
 /*
  * =========================================================
+ * EDITAR DADOS DA TRILHA
+ * =========================================================
+ */
+app.put(
+  '/api/trilhas/:id',
+  exigirLogin,
+  (req, res) => {
+    const trilhaId = req.params.id;
+
+    if (!usuarioEhAdminDaTrilha(trilhaId, req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Somente o criador/administrador pode editar a trilha.',
+      });
+    }
+
+    const atual = db.prepare('SELECT * FROM trails WHERE id = ?').get(trilhaId);
+    if (!atual) {
+      return res.status(404).json({ ok: false, error: 'Trilha não encontrada.' });
+    }
+
+    const name = limparTexto(req.body?.name ?? atual.name, 120, '');
+    const type = req.body?.type ?? atual.type;
+    const visibility = req.body?.visibility ?? atual.visibility;
+    const status = req.body?.status ?? atual.status;
+
+    if (name.length < 3) {
+      return res.status(400).json({ ok: false, error: 'Informe um nome válido para a trilha.' });
+    }
+    if (!['passeio', 'privada', 'evento'].includes(type)) {
+      return res.status(400).json({ ok: false, error: 'Tipo de trilha inválido.' });
+    }
+    if (!['publica', 'privada', 'convite'].includes(visibility)) {
+      return res.status(400).json({ ok: false, error: 'Tipo de acesso inválido.' });
+    }
+    if (!['open', 'closed'].includes(status)) {
+      return res.status(400).json({ ok: false, error: 'Status da trilha inválido.' });
+    }
+
+    const inicio = new Date(req.body?.startAt ?? atual.start_at);
+    const fim = new Date(req.body?.plannedEndAt ?? atual.planned_end_at);
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) {
+      return res.status(400).json({ ok: false, error: 'Confira as datas da trilha.' });
+    }
+
+    let releaseAt = atual.release_at;
+    if (Object.prototype.hasOwnProperty.call(req.body || {}, 'releaseAt')) {
+      if (!req.body.releaseAt) {
+        releaseAt = null;
+      } else {
+        const dataLiberacao = new Date(req.body.releaseAt);
+        if (Number.isNaN(dataLiberacao.getTime())) {
+          return res.status(400).json({ ok: false, error: 'Data de liberação inválida.' });
+        }
+        releaseAt = dataLiberacao.toISOString();
+      }
+    }
+
+    const safetyEndAt = new Date(fim.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+    db.prepare(`
+      UPDATE trails
+      SET name = ?, type = ?, visibility = ?, start_at = ?,
+          planned_end_at = ?, release_at = ?, safety_end_at = ?, status = ?
+      WHERE id = ?
+    `).run(
+      name, type, visibility, inicio.toISOString(), fim.toISOString(),
+      releaseAt, safetyEndAt, status, trilhaId
+    );
+
+    return res.json({
+      ok: true,
+      message: 'Trilha atualizada com sucesso.',
+    });
+  }
+);
+
+
+/*
+ * =========================================================
  * ROTA PLANEJADA DA TRILHA
  * =========================================================
  */
