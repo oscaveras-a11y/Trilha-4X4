@@ -1248,6 +1248,9 @@ app.put(
         if (Number.isNaN(dataLiberacao.getTime())) {
           return res.status(400).json({ ok: false, error: 'Data de liberação inválida.' });
         }
+        if (dataLiberacao < inicio) {
+          return res.status(400).json({ ok: false, error: 'A liberação da rota não pode ser antes do início da trilha.' });
+        }
         releaseAt = dataLiberacao.toISOString();
       }
     }
@@ -3668,6 +3671,66 @@ app.post(
           'Não foi possível enviar a solicitação.',
       });
     }
+  }
+);
+
+
+app.post(
+  '/api/grupos/:groupId/roles/:outingId/entrar-trilha',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, outingId } = req.params;
+    const vehicleId = req.body?.vehicleId;
+
+    const membroGrupo = db.prepare(
+      'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    const outing = db.prepare(`
+      SELECT trail_id AS trailId, status
+      FROM group_outings
+      WHERE id = ? AND group_id = ?
+    `).get(outingId, groupId);
+
+    if (!membroGrupo || !outing || outing.status !== 'confirmed' || !outing.trailId) {
+      return res.status(400).json({ ok: false, error: 'Este passeio ainda não possui uma trilha disponível.' });
+    }
+
+    const ativo = db.prepare(
+      "SELECT 1 FROM trail_members WHERE trail_id = ? AND user_id = ? AND status = 'active'"
+    ).get(outing.trailId, req.user.id);
+    if (ativo) return res.json({ ok: true, alreadyMember: true, trailId: outing.trailId });
+
+    const pendente = db.prepare(
+      "SELECT id FROM trail_join_requests WHERE trail_id = ? AND user_id = ? AND status = 'pending'"
+    ).get(outing.trailId, req.user.id);
+    if (pendente) return res.json({ ok: true, pending: true, trailId: outing.trailId });
+
+    const veiculo = db.prepare(`
+      SELECT id, type, brand, model, year, color, plate, notes
+      FROM vehicles WHERE id = ? AND user_id = ?
+    `).get(vehicleId, req.user.id);
+    if (!veiculo) {
+      return res.status(400).json({ ok: false, error: 'Escolha um veículo cadastrado para participar.' });
+    }
+
+    const requestId = crypto.randomUUID();
+    const agora = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO trail_join_requests (
+        id, trail_id, user_id, vehicle_type, vehicle_brand, vehicle_model,
+        vehicle_year, vehicle_color, vehicle_plate, vehicle_notes, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `).run(
+      requestId, outing.trailId, req.user.id, veiculo.type, veiculo.brand,
+      veiculo.model, veiculo.year, veiculo.color, veiculo.plate, veiculo.notes, agora
+    );
+
+    return res.status(201).json({
+      ok: true,
+      pending: true,
+      trailId: outing.trailId,
+      message: 'Solicitação enviada ao administrador da trilha.',
+    });
   }
 );
 
