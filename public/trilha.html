@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Trilha 4X4</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 16px 20px;
+    }
+
+    .topo {
+      max-width: 1000px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .voltar {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 15px;
+      background: #374151;
+      color: white;
+      cursor: pointer;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 16px 40px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    h1,
+    h2 {
+      margin-top: 0;
+    }
+
+    .codigo {
+      display: inline-block;
+      background: #e5e7eb;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: bold;
+    }
+
+    .informacoes {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(210px, 1fr)
+      );
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .info {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    #mapa {
+      height: 420px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .botoes {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(180px, 1fr)
+      );
+      gap: 12px;
+    }
+
+    .botao {
+      border: 0;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #modoTrilhaButton {
+      background: #166534;
+      color: white;
+    }
+
+    #modoTrilhaButton.ativo {
+      background: #b91c1c;
+    }
+
+    #gpsButton {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    #sosButton {
+      background: #dc2626;
+      color: white;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eff6ff;
+      line-height: 1.5;
+    }
+
+    .status.ativo {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status.sos {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .participante {
+      padding: 12px 0;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .erro {
+      display: none;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    @media (max-width: 600px) {
+      #mapa {
+        height: 330px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="topo">
+
+    <strong>
+      🛣️ Trilha 4X4
+    </strong>
+
+    <button
+      class="voltar"
+      id="voltarButton"
+    >
+      ← Voltar
+    </button>
+
+  </div>
+</header>
+
+<main>
+
+  <div
+    class="card erro"
+    id="mensagemErro"
+  ></div>
+
+  <!-- DADOS DA TRILHA -->
+
+  <section class="card">
+
+    <h1 id="nomeTrilha">
+      Carregando trilha...
+    </h1>
+
+    <div
+      class="codigo"
+      id="codigoTrilha"
+    >
+      ...
+    </div>
+
+    <div class="informacoes">
+
+      <div class="info">
+        <strong>Tipo</strong>
+        <br>
+        <span id="tipoTrilha">-</span>
+      </div>
+
+      <div class="info">
+        <strong>Acesso</strong>
+        <br>
+        <span id="acessoTrilha">-</span>
+      </div>
+
+      <div class="info">
+        <strong>Início</strong>
+        <br>
+        <span id="inicioTrilha">-</span>
+      </div>
+
+      <div class="info">
+        <strong>Término previsto</strong>
+        <br>
+        <span id="fimTrilha">-</span>
+      </div>
+
+      <div class="info">
+        <strong>Fim da segurança</strong>
+        <br>
+        <span id="segurancaTrilha">-</span>
+      </div>
+
+      <div class="info">
+        <strong>Seu papel</strong>
+        <br>
+        <span id="papelTrilha">-</span>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- SEGURANÇA -->
+
+  <section class="card">
+
+    <h2>
+      🛡️ Segurança da trilha
+    </h2>
+
+    <div class="status">
+
+      Depois do término previsto,
+      a janela de segurança permanece
+      ativa por mais <strong>24 horas</strong>.
+
+      <br><br>
+
+      Sua localização só será compartilhada
+      quando você ativar o
+      <strong>Modo Trilha</strong>.
+
+    </div>
+
+  </section>
+
+
+  <!-- MODO TRILHA -->
+
+  <section class="card">
+
+    <h2>
+      📍 Modo Trilha
+    </h2>
+
+    <p>
+      Ative somente quando realmente
+      estiver participando desta trilha.
+    </p>
+
+    <div class="botoes">
+
+      <button
+        class="botao"
+        id="modoTrilhaButton"
+      >
+        ▶ ATIVAR MODO TRILHA
+      </button>
+
+      <button
+        class="botao"
+        id="gpsButton"
+      >
+        📍 CENTRALIZAR NO GPS
+      </button>
+
+      <button
+        class="botao"
+        id="sosButton"
+      >
+        🆘 PRECISO DE AJUDA
+      </button>
+
+    </div>
+
+    <div
+      class="status"
+      id="modoStatus"
+    >
+      Modo Trilha está desligado.
+    </div>
+
+    <div
+      class="status sos"
+      id="sosStatus"
+      style="display:none;"
+    ></div>
+
+  </section>
+
+
+  <!-- MAPA -->
+
+  <section class="card">
+
+    <h2>
+      🗺️ Mapa da trilha
+    </h2>
+
+    <div id="mapa"></div>
+
+  </section>
+
+
+  <!-- PARTICIPANTES -->
+
+  <section class="card">
+
+    <h2>
+      👥 Participantes
+    </h2>
+
+    <div id="participantes">
+      Carregando...
+    </div>
+
+  </section>
+
+</main>
+
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+
+<script>
+
+  let trilhaId = null;
+
+  let trilha = null;
+
+  let mapa = null;
+
+  let marcadorUsuario = null;
+
+  let precisaoUsuario = null;
+
+  let watchId = null;
+
+  let modoTrilhaAtivo = false;
+
+  let conexaoTempoReal = null;
+
+  let meuSosId = null;
+
+  const marcadoresParticipantes = new Map();
+
+
+  /*
+   * PEGA O ID DA TRILHA NA URL
+   */
+
+  const parametros =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  trilhaId =
+    parametros.get('id');
+
+
+  /*
+   * BOTÃO VOLTAR
+   */
+
+  document
+    .getElementById('voltarButton')
+    .addEventListener(
+      'click',
+      () => {
+        window.location.href = '/';
+      }
+    );
+
+
+  /*
+   * BOTÃO MODO TRILHA
+   */
+
+  document
+    .getElementById('modoTrilhaButton')
+    .addEventListener(
+      'click',
+      () => {
+
+        if (modoTrilhaAtivo) {
+
+          encerrarModoTrilha();
+
+        } else {
+
+          iniciarModoTrilha();
+
+        }
+
+      }
+    );
+
+
+  /*
+   * BOTÃO GPS
+   */
+
+  document
+    .getElementById('gpsButton')
+    .addEventListener(
+      'click',
+      () => {
+
+        obterLocalizacao(true);
+
+      }
+    );
+
+
+  /*
+   * BOTÃO SOS
+   */
+
+  document
+    .getElementById('sosButton')
+    .addEventListener(
+      'click',
+      () => {
+
+        if (meuSosId) {
+
+          encerrarSOS();
+
+        } else {
+
+          ativarSOS();
+
+        }
+
+      }
+    );
+
+
+  /*
+   * MOSTRAR ERRO
+   */
+
+  function mostrarErro(mensagem) {
+
+    const elemento =
+      document.getElementById(
+        'mensagemErro'
+      );
+
+    elemento.textContent =
+      mensagem;
+
+    elemento.style.display =
+      'block';
+
+  }
+
+
+  /*
+   * DATA BRASILEIRA
+   */
+
+  function dataBR(valor) {
+
+    if (!valor) {
+      return '-';
+    }
+
+    return new Date(valor)
+      .toLocaleString('pt-BR');
+
+  }
+
+
+  /*
+   * TIPOS
+   */
+
+  function traduzirTipo(valor) {
+
+    const tipos = {
+
+      passeio: 'Passeio',
+
+      privada: 'Privada',
+
+      evento: 'Evento'
+
+    };
+
+    return tipos[valor] || valor;
+
+  }
+
+
+  /*
+   * ACESSOS
+   */
+
+  function traduzirAcesso(valor) {
+
+    const acessos = {
+
+      publica: 'Pública',
+
+      privada: 'Privada',
+
+      convite: 'Somente por convite'
+
+    };
+
+    return acessos[valor] || valor;
+
+  }
+
+
+  /*
+   * MAPA
+   */
+
+  function iniciarMapa() {
+
+    mapa =
+      L.map('mapa')
+        .setView(
+          [-14.2350, -51.9253],
+          4
+        );
+
+
+    L.tileLayer(
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 19,
+        attribution:
+          '&copy; OpenStreetMap contributors'
+      }
+    ).addTo(mapa);
+
+  }
+
+
+  /*
+   * CARREGAR TRILHA
+   */
+
+  async function carregarTrilha() {
+
+    if (!trilhaId) {
+
+      mostrarErro(
+        'ID da trilha não foi informado.'
+      );
+
+      return;
+    }
+
+
+    try {
+
+      const resposta =
+        await fetch(
+          '/api/trilhas/' +
+          encodeURIComponent(
+            trilhaId
+          ),
+          {
+            cache: 'no-store'
+          }
+        );
+
+
+      const dados =
+        await resposta.json();
+
+
+      if (!resposta.ok) {
+
+        mostrarErro(
+          dados.error ||
+          'Não foi possível abrir esta trilha.'
+        );
+
+        return;
+      }
+
+
+      trilha =
+        dados.trail;
+
+
+      document.title =
+        trilha.name +
+        ' — Trilha 4X4';
+
+
+      document.getElementById(
+        'nomeTrilha'
+      ).textContent =
+        trilha.name;
+
+
+      document.getElementById(
+        'codigoTrilha'
+      ).textContent =
+        trilha.code;
+
+
+      document.getElementById(
+        'tipoTrilha'
+      ).textContent =
+        traduzirTipo(
+          trilha.type
+        );
+
+
+      document.getElementById(
+        'acessoTrilha'
+      ).textContent =
+        traduzirAcesso(
+          trilha.visibility
+        );
+
+
+      document.getElementById(
+        'inicioTrilha'
+      ).textContent =
+        dataBR(
+          trilha.startAt
+        );
+
+
+      document.getElementById(
+        'fimTrilha'
+      ).textContent =
+        dataBR(
+          trilha.plannedEndAt
+        );
+
+
+      document.getElementById(
+        'segurancaTrilha'
+      ).textContent =
+        dataBR(
+          trilha.safetyEndAt
+        );
+
+
+      document.getElementById(
+        'papelTrilha'
+      ).textContent =
+        trilha.role === 'admin'
+          ? 'Administrador'
+          : 'Membro';
+
+
+      mostrarParticipantes(
+        trilha.participants
+      );
+
+    } catch (erro) {
+
+      console.error(erro);
+
+      mostrarErro(
+        'Não foi possível conectar ao servidor.'
+      );
+
+    }
+
+  }
+
+
+  /*
+   * PARTICIPANTES
+   */
+
+  function mostrarParticipantes(
+    participantes
+  ) {
+
+    const elemento =
+      document.getElementById(
+        'participantes'
+      );
+
+
+    if (
+      !participantes ||
+      participantes.length === 0
+    ) {
+
+      elemento.textContent =
+        'Nenhum participante encontrado.';
+
+      return;
+    }
+
+
+    elemento.innerHTML =
+      participantes
+        .map(
+          participante => {
+
+            const papel =
+              participante.role === 'admin'
+                ? 'Administrador'
+                : 'Membro';
+
+
+            return `
+              <div class="participante">
+
+                <span>
+                  👤
+                  ${escaparHTML(
+                    participante.name
+                  )}
+                </span>
+
+                <strong>
+                  ${papel}
+                </strong>
+
+              </div>
+            `;
+
+          }
+        )
+        .join('');
+
+  }
+
+
+  /*
+   * SEGURANÇA CONTRA HTML
+   */
+
+  function escaparHTML(texto) {
+
+    return String(texto || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll(
+        "'",
+        '&#039;'
+      );
+
+  }
+
+
+  /*
+   * INICIAR MODO TRILHA
+   */
+
+  function iniciarModoTrilha() {
+
+    if (!navigator.geolocation) {
+
+      mostrarErro(
+        'Este dispositivo não oferece GPS pelo navegador.'
+      );
+
+      return;
+    }
+
+
+    modoTrilhaAtivo =
+      true;
+
+
+    const botao =
+      document.getElementById(
+        'modoTrilhaButton'
+      );
+
+
+    botao.textContent =
+      '⏹ ENCERRAR MODO TRILHA';
+
+
+    botao.classList.add(
+      'ativo'
+    );
+
+
+    const status =
+      document.getElementById(
+        'modoStatus'
+      );
+
+
+    status.className =
+      'status ativo';
+
+
+    status.textContent =
+      'Modo Trilha ativo. Sua localização está sendo compartilhada apenas com os participantes desta trilha.';
+
+
+    obterLocalizacao(false);
+
+
+    watchId =
+      navigator.geolocation.watchPosition(
+        enviarLocalizacao,
+
+        erroGPS,
+
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 15000
+        }
+      );
+
+
+    conectarTempoReal();
+
+  }
+
+
+  /*
+   * ENCERRAR MODO TRILHA
+   */
+
+  async function encerrarModoTrilha() {
+
+    modoTrilhaAtivo =
+      false;
+
+
+    if (watchId !== null) {
+
+      navigator.geolocation.clearWatch(
+        watchId
+      );
+
+      watchId = null;
+
+    }
+
+
+    if (conexaoTempoReal) {
+
+      conexaoTempoReal.close();
+
+      conexaoTempoReal =
+        null;
+
+    }
+
+
+    try {
+
+      await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(
+          trilhaId
+        ) +
+        '/localizacao',
+        {
+          method: 'DELETE'
+        }
+      );
+
+    } catch (erro) {
+
+      console.error(erro);
+
+    }
+
+
+    const botao =
+      document.getElementById(
+        'modoTrilhaButton'
+      );
+
+
+    botao.textContent =
+      '▶ ATIVAR MODO TRILHA';
+
+
+    botao.classList.remove(
+      'ativo'
+    );
+
+
+    const status =
+      document.getElementById(
+        'modoStatus'
+      );
+
+
+    status.className =
+      'status';
+
+
+    status.textContent =
+      'Modo Trilha encerrado. Sua localização deixou de ser compartilhada.';
+
+  }
+
+
+  /*
+   * OBTER GPS
+   */
+
+  function obterLocalizacao(
+    centralizar
+  ) {
+
+    navigator.geolocation.getCurrentPosition(
+
+      position => {
+
+        atualizarMapaUsuario(
+          position
+        );
+
+
+        if (
+          centralizar &&
+          mapa
+        ) {
+
+          mapa.setView(
+            [
+              position.coords.latitude,
+              position.coords.longitude
+            ],
+            16
+          );
+
+        }
+
+
+        if (
+          modoTrilhaAtivo
+        ) {
+
+          enviarLocalizacao(
+            position
+          );
+
+        }
+
+      },
+
+      erroGPS,
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 5000
+      }
+
+    );
+
+  }
+
+
+  /*
+   * ATUALIZAR MINHA POSIÇÃO
+   */
+
+  function atualizarMapaUsuario(
+    position
+  ) {
+
+    if (!mapa) {
+      return;
+    }
+
+
+    const latitude =
+      position.coords.latitude;
+
+    const longitude =
+      position.coords.longitude;
+
+    const precisao =
+      position.coords.accuracy;
+
+
+    if (!marcadorUsuario) {
+
+      marcadorUsuario =
+        L.marker(
+          [
+            latitude,
+            longitude
+          ]
+        )
+        .addTo(mapa)
+        .bindPopup(
+          '📍 Você está aqui'
+        );
+
+    } else {
+
+      marcadorUsuario.setLatLng(
+        [
+          latitude,
+          longitude
+        ]
+      );
+
+    }
+
+
+    if (!precisaoUsuario) {
+
+      precisaoUsuario =
+        L.circle(
+          [
+            latitude,
+            longitude
+          ],
+          {
+            radius: precisao
+          }
+        )
+        .addTo(mapa);
+
+    } else {
+
+      precisaoUsuario.setLatLng(
+        [
+          latitude,
+          longitude
+        ]
+      );
+
+      precisaoUsuario.setRadius(
+        precisao
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ENVIAR LOCALIZAÇÃO
+   */
+
+  async function enviarLocalizacao(
+    position
+  ) {
+
+    if (!modoTrilhaAtivo) {
+      return;
+    }
+
+
+    atualizarMapaUsuario(
+      position
+    );
+
+
+    try {
+
+      await fetch(
+        '/api/trilhas/' +
+        encodeURIComponent(
+          trilhaId
+        ) +
+        '/localizacao',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+
+              latitude:
+                position.coords.latitude,
+
+              longitude:
+                position.coords.longitude,
+
+              accuracy:
+                position.coords.accuracy
+
+            })
+        }
+      );
+
+    } catch (erro) {
+
+      console.error(
+        'Erro ao enviar localização:',
+        erro
+      );
+
+    }
+
+  }
+
+
+  /*
+   * TEMPO REAL
+   */
+
+  function conectarTempoReal() {
+
+    if (conexaoTempoReal) {
+
+      conexaoTempoReal.close();
+
+    }
+
+
+    conexaoTempoReal =
+      new EventSource(
+        '/api/trilhas/' +
+        encodeURIComponent(
+          trilhaId
+        ) +
+        '/localizacoes'
+      );
+
+
+    conexaoTempoReal
+      .addEventListener(
+        'estado',
+        evento => {
+
+          const localizacoes =
+            JSON.parse(
+              evento.data
+            );
+
+
+          localizacoes.forEach(
+            mostrarParticipanteMapa
+          );
+
+        }
+      );
+
+
+    conexaoTempoReal
+      .addEventListener(
+        'localizacao',
+        evento => {
+
+          mostrarParticipanteMapa(
+            JSON.parse(
+              evento.data
+            )
+          );
+
+        }
+      );
+
+
+    conexaoTempoReal
+      .addEventListener(
+        'localizacao_removida',
+        evento => {
+
+          const dados =
+            JSON.parse(
+              evento.data
+            );
+
+
+          removerParticipanteMapa(
+            dados.userId
+          );
+
+        }
+      );
+
+
+    conexaoTempoReal
+      .addEventListener(
+        'sos',
+        evento => {
+
+          mostrarAlertaSOS(
+            JSON.parse(
+              evento.data
+            )
+          );
+
+        }
+      );
+
+
+    conexaoTempoReal.onerror =
+      () => {
+
+        console.warn(
+          'Conexão em tempo real indisponível.'
+        );
+
+      };
+
+  }
+
+
+  /*
+   * MOSTRAR PARTICIPANTE NO MAPA
+   */
+
+  function mostrarParticipanteMapa(
+    localizacao
+  ) {
+
+    if (
+      !mapa ||
+      !localizacao ||
+      !localizacao.userId
+    ) {
+
+      return;
+    }
+
+
+    let marcador =
+      marcadoresParticipantes.get(
+        localizacao.userId
+      );
+
+
+    if (!marcador) {
+
+      marcador =
+        L.marker(
+          [
+            localizacao.latitude,
+            localizacao.longitude
+          ]
+        )
+        .addTo(mapa)
+        .bindPopup(
+          '👤 ' +
+          escaparHTML(
+            localizacao.name
+          )
+        );
+
+
+      marcadoresParticipantes.set(
+        localizacao.userId,
+        marcador
+      );
+
+    } else {
+
+      marcador.setLatLng(
+        [
+          localizacao.latitude,
+          localizacao.longitude
+        ]
+      );
+
+    }
+
+  }
+
+
+  /*
+   * REMOVER PARTICIPANTE
+   */
+
+  function removerParticipanteMapa(
+    userId
+  ) {
+
+    const marcador =
+      marcadoresParticipantes.get(
+        userId
+      );
+
+
+    if (marcador) {
+
+      marcador.remove();
+
+      marcadoresParticipantes.delete(
+        userId
+      );
+
+    }
+
+  }
+
+
+  /*
+   * ERRO GPS
+   */
+
+  function erroGPS(error) {
+
+    console.error(
+      'GPS:',
+      error
+    );
+
+
+    mostrarErro(
+      'Não foi possível obter sua localização. Verifique a permissão de GPS do navegador.'
+    );
+
+  }
+
+
+  /*
+   * SOS
+   */
+
+  async function ativarSOS() {
+
+    if (!modoTrilhaAtivo) {
+
+      alert(
+        'Ative o Modo Trilha antes de usar o SOS.'
+      );
+
+      return;
+    }
+
+
+    const confirmar =
+      confirm(
+        '🆘 ATIVAR SOS?\\n\\nSua localização será enviada aos participantes desta trilha.'
+      );
+
+
+    if (!confirmar) {
+      return;
+    }
+
+
+    navigator.geolocation.getCurrentPosition(
+
+      async position => {
+
+        try {
+
+          const resposta =
+            await fetch(
+              '/api/trilhas/' +
+              encodeURIComponent(
+                trilhaId
+              ) +
+              '/sos',
+              {
+                method: 'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json'
+                },
+
+                body:
+                  JSON.stringify({
+
+                    latitude:
+                      position.coords.latitude,
+
+                    longitude:
+                      position.coords.longitude,
+
+                    accuracy:
+                      position.coords.accuracy,
+
+                    motivo:
+                      'Preciso de ajuda'
+
+                  })
+              }
+            );
+
+
+          const dados =
+            await resposta.json();
+
+
+          if (!resposta.ok) {
+
+            alert(
+              dados.error ||
+              'Não foi possível ativar o SOS.'
+            );
+
+            return;
+          }
+
+
+          meuSosId =
+            dados.alert.id;
+
+
+          const status =
+            document.getElementById(
+              'sosStatus'
+            );
+
+
+          status.style.display =
+            'block';
+
+
+          status.textContent =
+            '🚨 SOS ATIVO. Os participantes desta trilha foram alertados.';
+
+
+          const botao =
+            document.getElementById(
+              'sosButton'
+            );
+
+
+          botao.textContent =
+            '🛑 ENCERRAR MEU SOS';
+
+        } catch (erro) {
+
+          console.error(erro);
+
+          alert(
+            'Não foi possível conectar ao servidor.'
+          );
+
+        }
+
+      },
+
+      () => {
+
+        alert(
+          'Não foi possível obter sua localização para o SOS.'
+        );
+
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+
+    );
+
+  }
+
+
+  /*
+   * ENCERRAR SOS
+   */
+
+  async function encerrarSOS() {
+
+    if (!meuSosId) {
+      return;
+    }
+
+
+    try {
+
+      const resposta =
+        await fetch(
+          '/api/trilhas/' +
+          encodeURIComponent(
+            trilhaId
+          ) +
+          '/sos/' +
+          encodeURIComponent(
+            meuSosId
+          ),
+          {
+            method: 'DELETE'
+          }
+        );
+
+
+      if (!resposta.ok) {
+
+        const dados =
+          await resposta.json();
+
+        alert(
+          dados.error ||
+          'Não foi possível encerrar o SOS.'
+        );
+
+        return;
+      }
+
+
+      meuSosId =
+        null;
+
+
+      document.getElementById(
+        'sosStatus'
+      ).style.display =
+        'none';
+
+
+      document.getElementById(
+        'sosButton'
+      ).textContent =
+        '🆘 PRECISO DE AJUDA';
+
+    } catch (erro) {
+
+      console.error(erro);
+
+      alert(
+        'Não foi possível conectar ao servidor.'
+      );
+
+    }
+
+  }
+
+
+  /*
+   * MOSTRAR SOS
+   */
+
+  function mostrarAlertaSOS(
+    alerta
+  ) {
+
+    const status =
+      document.getElementById(
+        'sosStatus'
+      );
+
+
+    status.style.display =
+      'block';
+
+
+    status.textContent =
+      '🚨 SOS ATIVO: ' +
+      (
+        alerta.userName ||
+        'Participante'
+      ) +
+      ' precisa de ajuda.';
+
+  }
+
+
+  /*
+   * INICIALIZAÇÃO
+   */
+
+  iniciarMapa();
+
+  carregarTrilha();
+
+</script>
+
+</body>
+</html>
