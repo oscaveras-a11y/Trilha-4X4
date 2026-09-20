@@ -974,6 +974,51 @@ app.get(
 
 
 /*
+ * Solicitações do usuário para acompanhar aprovação.
+ * Mantém apenas a solicitação mais recente de cada trilha.
+ */
+app.get(
+  '/api/trilhas/solicitacoes/minhas',
+  exigirLogin,
+  (req, res) => {
+    try {
+      const requests = db.prepare(`
+        SELECT
+          r.id,
+          r.status,
+          r.created_at AS createdAt,
+          r.decided_at AS decidedAt,
+          t.id AS trailId,
+          t.code,
+          t.name,
+          t.type,
+          t.visibility,
+          t.start_at AS startAt
+        FROM trail_join_requests r
+        INNER JOIN trails t ON t.id = r.trail_id
+        WHERE r.user_id = ?
+          AND r.created_at = (
+            SELECT MAX(r2.created_at)
+            FROM trail_join_requests r2
+            WHERE r2.user_id = r.user_id
+              AND r2.trail_id = r.trail_id
+          )
+        ORDER BY r.created_at DESC
+      `).all(req.user.id);
+
+      return res.json({ ok: true, requests });
+    } catch (error) {
+      console.error('Erro ao listar solicitações do usuário:', error);
+      return res.status(500).json({
+        ok: false,
+        error: 'Não foi possível carregar suas solicitações.',
+      });
+    }
+  }
+);
+
+
+/*
  * Consulta uma trilha pelo código antes da solicitação.
  */
 app.get(
@@ -2400,9 +2445,21 @@ function normalizarCodigoTrilha(codigo) {
     return '';
   }
 
-  return codigo
+  const compacto = codigo
     .trim()
-    .toUpperCase();
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/-/g, '');
+
+  const sufixo = compacto.startsWith('4X4')
+    ? compacto.slice(3)
+    : compacto;
+
+  if (!/^[A-Z0-9]{5}$/.test(sufixo)) {
+    return '';
+  }
+
+  return `4X4-${sufixo}`;
 }
 
 
