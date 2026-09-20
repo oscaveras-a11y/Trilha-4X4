@@ -2835,7 +2835,15 @@ app.delete(
       }
     }
 
-    db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, userId);
+    const remover = db.transaction(() => {
+      db.prepare(`
+        DELETE FROM group_outing_responses
+        WHERE user_id = ?
+          AND outing_id IN (SELECT id FROM group_outings WHERE group_id = ?)
+      `).run(userId, groupId);
+      db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, userId);
+    });
+    remover();
     return res.json({ ok: true });
   }
 );
@@ -2863,7 +2871,15 @@ app.delete(
       }
     }
 
-    db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, req.user.id);
+    const sair = db.transaction(() => {
+      db.prepare(`
+        DELETE FROM group_outing_responses
+        WHERE user_id = ?
+          AND outing_id IN (SELECT id FROM group_outings WHERE group_id = ?)
+      `).run(req.user.id, groupId);
+      db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, req.user.id);
+    });
+    sair();
     return res.json({ ok: true, message: 'Você saiu do grupo.' });
   }
 );
