@@ -503,6 +503,46 @@ async function abrirMeu4x4() {
   }
 }
 
+async function editarGrupo(groupId, nomeAtual) {
+  const novoNome = prompt('Novo nome do grupo:', nomeAtual || '');
+
+  if (novoNome === null) {
+    return;
+  }
+
+  const name = novoNome.trim();
+
+  if (name.length < 2) {
+    alert('Informe um nome válido para o grupo.');
+    return;
+  }
+
+  try {
+    const resposta = await fetch(
+      '/api/grupos/' + encodeURIComponent(groupId),
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      alert(dados.error || 'Não foi possível editar o grupo.');
+      return;
+    }
+
+    alert('Grupo atualizado com sucesso.');
+    document.querySelectorAll('[data-grupos-overlay]').forEach((elemento) => elemento.remove());
+    abrirGrupos();
+  } catch (error) {
+    console.error('Erro ao editar grupo:', error);
+    alert('Não foi possível conectar ao servidor.');
+  }
+}
+
 async function abrirGrupos() {
   try {
     const resposta = await fetch('/api/grupos', { cache: 'no-store' });
@@ -514,6 +554,7 @@ async function abrirGrupos() {
     }
 
     const overlay = document.createElement('div');
+    overlay.dataset.gruposOverlay = '1';
     overlay.style.cssText = `
       position:fixed;inset:0;background:rgba(0,0,0,0.72);
       display:flex;align-items:center;justify-content:center;
@@ -532,6 +573,13 @@ async function abrirGrupos() {
             <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;">
               <strong>${escaparTextoTrilha(grupo.name)}</strong><br>
               ${grupo.memberCount} participante(s) · ${escaparTextoTrilha(grupo.role)}
+              ${grupo.role === 'admin' ? `
+                <button
+                  type="button"
+                  onclick="editarGrupo('${grupo.id}', '${escaparTextoTrilha(grupo.name)}')"
+                  style="display:block;margin-top:10px;padding:9px 12px;border:1px solid #222;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold;"
+                >✏️ Editar grupo</button>
+              ` : ''}
             </div>
           `).join('') : '<p>Você ainda não participa de grupos.</p>'}
         </div>
