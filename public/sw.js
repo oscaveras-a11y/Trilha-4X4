@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v1';
+const CACHE_NAME = 'trilha-4x4-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -31,7 +31,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+  const appPage =
+    url.origin === self.location.origin &&
+    (
+      event.request.mode === 'navigate' ||
+      url.pathname.endsWith('.html') ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.css') ||
+      url.pathname === '/sw.js'
+    );
+
+  if (appPage) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    caches.match(event.request)
+      .then((cached) => cached || fetch(event.request))
   );
 });
