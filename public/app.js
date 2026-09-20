@@ -413,7 +413,10 @@ async function abrirMeu4x4() {
       return;
     }
 
+    document.getElementById('solicitacoesAdminOverlay')?.remove();
+
     const overlay = document.createElement('div');
+    overlay.id = 'solicitacoesAdminOverlay';
     overlay.style.cssText = `
       position:fixed;
       inset:0;
@@ -1290,6 +1293,7 @@ async function analisarSolicitacao(
     }
 
     alert(dados.message || 'Solicitação atualizada.');
+    document.getElementById('solicitacoesAdminOverlay')?.remove();
     document.getElementById('listaTrilhasOverlay')?.remove();
     await abrirSolicitacoesAdmin(trilhaId);
   } catch (error) {
@@ -1465,7 +1469,9 @@ ${trilha.role === 'admin' ? `
     font-size:15px;
   "
 >
-  ADMINISTRAR SOLICITAÇÕES
+  ADMINISTRAR SOLICITAÇÕES${Number(trilha.pendingRequestCount || 0) > 0
+    ? ` (${trilha.pendingRequestCount} PENDENTE${Number(trilha.pendingRequestCount) === 1 ? '' : 'S'})`
+    : ''}
 </button>
 ` : ''}
           </div>
