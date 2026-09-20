@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Trilha-4X4 — Acesso</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 430px;
+      background: #1c1c1c;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .subtitulo {
+      text-align: center;
+      color: #bbb;
+      margin-bottom: 25px;
+    }
+
+    .abas {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 25px;
+    }
+
+    .aba {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .aba.ativa {
+      background: #e53935;
+    }
+
+    form {
+      display: none;
+    }
+
+    form.ativo {
+      display: block;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 16px;
+      border: 1px solid #444;
+      border-radius: 10px;
+      background: #111;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #e53935;
+    }
+
+    .termos {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .termos input {
+      width: auto;
+      margin: 3px 0 0;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #e53935;
+      color: #fff;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background: #c62828;
+    }
+
+    #mensagem {
+      min-height: 24px;
+      margin-top: 18px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .sucesso {
+      color: #4caf50;
+    }
+
+    .erro {
+      color: #ff5252;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="container">
+
+    <h1>🚙 Trilha-4X4</h1>
+
+    <p class="subtitulo">
+      Entre ou crie sua conta
+    </p>
+
+    <div class="abas">
+      <button
+  type="button"
+  class="aba ativa"
+  id="abaLogin"
+>
+  Entrar
+</button>
+
+<button
+  type="button"
+  class="aba"
+  id="abaCadastro"
+>
+  Criar conta
+</button>
+        Criar conta
+      </button>
+    </div>
+
+    <!-- LOGIN -->
+
+    <form id="formLogin" class="ativo">
+
+      <label for="loginEmail">
+        E-mail
+      </label>
+
+      <input
+        id="loginEmail"
+        type="email"
+        placeholder="seu@email.com"
+        required
+      >
+
+      <label for="loginSenha">
+        Senha
+      </label>
+
+      <input
+        id="loginSenha"
+        type="password"
+        placeholder="Sua senha"
+        required
+      >
+
+      <button type="submit">
+        Entrar
+      </button>
+
+    </form>
+
+    <!-- CADASTRO -->
+
+    <form id="formCadastro">
+
+      <label for="cadastroNome">
+        Nome ou apelido
+      </label>
+
+      <input
+        id="cadastroNome"
+        type="text"
+        placeholder="Como devemos chamar você?"
+        required
+      >
+
+      <label for="cadastroEmail">
+        E-mail
+      </label>
+
+      <input
+        id="cadastroEmail"
+        type="email"
+        placeholder="seu@email.com"
+        required
+      >
+
+      <label for="cadastroSenha">
+        Senha
+      </label>
+
+      <input
+        id="cadastroSenha"
+        type="password"
+        placeholder="Mínimo de 8 caracteres"
+        minlength="8"
+        required
+      >
+
+      <div class="termos">
+
+        <input
+          id="termos"
+          type="checkbox"
+          required
+        >
+
+        <label for="termos">
+          Aceito os termos de uso do Trilha-4X4.
+        </label>
+
+      </div>
+
+      <button type="submit">
+        Criar minha conta
+      </button>
+
+    </form>
+
+    <div id="mensagem"></div>
+
+  </main>
+
+  <script>
+
+    const formLogin = document.getElementById('formLogin');
+    const formCadastro = document.getElementById('formCadastro');
+
+    const abaLogin = document.getElementById('abaLogin');
+    const abaCadastro = document.getElementById('abaCadastro');
+
+    const mensagem = document.getElementById('mensagem');
+        abaLogin.addEventListener('click', mostrarLogin);
+        abaCadastro.addEventListener('click', mostrarCadastro);
+    function mostrarLogin() {
+      formLogin.classList.add('ativo');
+      formCadastro.classList.remove('ativo');
+
+      abaLogin.classList.add('ativa');
+      abaCadastro.classList.remove('ativa');
+
+      mensagem.textContent = '';
+    }
+
+    function mostrarCadastro() {
+      formLogin.classList.remove('ativo');
+      formCadastro.classList.add('ativo');
+
+      abaLogin.classList.remove('ativa');
+      abaCadastro.classList.add('ativa');
+
+      mensagem.textContent = '';
+    }
+
+    function mostrarMensagem(texto, tipo) {
+      mensagem.textContent = texto;
+      mensagem.className = tipo;
+    }
+
+    formCadastro.addEventListener('submit', async (event) => {
+
+      event.preventDefault();
+
+      const nome = document.getElementById('cadastroNome').value.trim();
+      const email = document.getElementById('cadastroEmail').value.trim();
+      const senha = document.getElementById('cadastroSenha').value;
+      const termos = document.getElementById('termos').checked;
+
+      mostrarMensagem('Criando sua conta...', '');
+
+      try {
+
+        const resposta = await fetch('/api/auth/register', {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          body: JSON.stringify({
+            name: nome,
+            email: email,
+            password: senha,
+            termsAccepted: termos
+          })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          mostrarMensagem(
+            dados.error || 'Não foi possível criar a conta.',
+            'erro'
+          );
+
+          return;
+        }
+
+        mostrarMensagem(
+          'Conta criada com sucesso! Você já está conectado.',
+          'sucesso'
+        );
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1200);
+
+      } catch (erro) {
+
+        console.error(erro);
+
+        mostrarMensagem(
+          'Não foi possível conectar ao servidor.',
+          'erro'
+        );
+      }
+    });
+
+    formLogin.addEventListener('submit', async (event) => {
+
+      event.preventDefault();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const senha = document.getElementById('loginSenha').value;
+
+      mostrarMensagem('Entrando...', '');
+
+      try {
+
+        const resposta = await fetch('/api/auth/login', {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          body: JSON.stringify({
+            email: email,
+            password: senha
+          })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          mostrarMensagem(
+            dados.error || 'Não foi possível entrar.',
+            'erro'
+          );
+
+          return;
+        }
+
+        mostrarMensagem(
+          `Olá, ${dados.user.name}! Login realizado.`,
+          'sucesso'
+        );
+
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1200);
+
+      } catch (erro) {
+
+        console.error(erro);
+
+        mostrarMensagem(
+          'Não foi possível conectar ao servidor.',
+          'erro'
+        );
+      }
+    });
+
+  </script>
+
+</body>
+</html>
+
