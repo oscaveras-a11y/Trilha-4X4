@@ -1633,8 +1633,8 @@ function abrirEntrarTrilha() {
         margin-top:16px;
         line-height:1.5;
       ">
-        🔐 Em trilhas privadas ou eventos,
-        sua entrada dependerá da aprovação do administrador.
+        🔐 Toda solicitação de entrada, inclusive em trilhas públicas,
+        depende da aprovação do criador/administrador.
       </div>
 
       <div style="
