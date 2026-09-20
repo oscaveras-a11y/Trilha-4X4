@@ -2293,6 +2293,54 @@ app.get(
   }
 );
 
+app.put(
+  '/api/grupos/:id',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const name = limparTexto(req.body?.name, 100, '');
+
+    if (name.length < 2) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Informe um nome válido para o grupo.',
+      });
+    }
+
+    const grupo = db.prepare(`
+      SELECT role
+      FROM group_members
+      WHERE group_id = ? AND user_id = ?
+    `).get(groupId, req.user.id);
+
+    if (!grupo || grupo.role !== 'admin') {
+      return res.status(403).json({
+        ok: false,
+        error: 'Somente o criador/administrador pode editar o grupo.',
+      });
+    }
+
+    const resultado = db.prepare(`
+      UPDATE groups
+      SET name = ?
+      WHERE id = ?
+    `).run(name, groupId);
+
+    if (!resultado.changes) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Grupo não encontrado.',
+      });
+    }
+
+    return res.json({
+      ok: true,
+      group: { id: groupId, name },
+      message: 'Grupo atualizado com sucesso.',
+    });
+  }
+);
+
 app.post(
   '/api/grupos/:id/trilhas',
   exigirLogin,
