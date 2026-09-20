@@ -68,7 +68,7 @@
   <main class="container">
 
 
-    <section class="hero">
+    <section class="hero" id="homeHero">
 
       <h1>
         Seu mundo 4x4 começa aqui.
@@ -82,7 +82,7 @@
     </section>
 
 
-    <section class="menu-grid">
+    <section class="menu-grid" id="homeMenu">
 <button
   class="menu-card"
   data-page="entrar-trilha"
@@ -301,6 +301,17 @@
     </section>
 
 
+    <section id="paginaModulo" class="module-page" style="display:none;">
+      <div class="module-topbar">
+        <button type="button" id="voltarHome" class="module-back">← Voltar</button>
+        <div>
+          <span class="module-kicker">TRILHA 4X4</span>
+          <h1 id="tituloModulo">Módulo</h1>
+        </div>
+      </div>
+      <div id="conteudoModulo" class="module-content"></div>
+    </section>
+
     <!-- ÁREA DE SEGURANÇA -->
 
     <section
@@ -356,6 +367,7 @@
 
     <section
       class="location-box"
+      data-home-only="1"
       id="locationBox"
     >
 
