@@ -153,21 +153,11 @@
     </p>
 
     <div class="abas">
-      <button
-  type="button"
-  class="aba ativa"
-  id="abaLogin"
->
-  Entrar
-</button>
+      <button type="button" class="aba ativa" id="abaLogin">
+        Entrar
+      </button>
 
-<button
-  type="button"
-  class="aba"
-  id="abaCadastro"
->
-  Criar conta
-</button>
+      <button type="button" class="aba" id="abaCadastro">
         Criar conta
       </button>
     </div>
@@ -275,8 +265,10 @@
     const abaCadastro = document.getElementById('abaCadastro');
 
     const mensagem = document.getElementById('mensagem');
-        abaLogin.addEventListener('click', mostrarLogin);
-        abaCadastro.addEventListener('click', mostrarCadastro);
+
+    abaLogin.addEventListener('click', mostrarLogin);
+    abaCadastro.addEventListener('click', mostrarCadastro);
+
     function mostrarLogin() {
       formLogin.classList.add('ativo');
       formCadastro.classList.remove('ativo');

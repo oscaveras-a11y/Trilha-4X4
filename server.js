@@ -401,260 +401,240 @@ app.get('/health', (_req, res) => {
 /*
  * =========================================================
  * SOS
- * =========================================================
- *
- * Nesta primeira etapa mantemos o SOS funcionando exatamente
- * como estava.
- *
- * Depois vamos ligar o SOS ao usuário autenticado e à trilha.
- */
-
-app.post('/api/sos', (req, res) => {
-  const { latitude, longitude, motivo, usuario } = req.body || {};
-
-  if (!validarNumeroCoordenada(latitude, -90, 90)) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Latitude inválida.',
-    });
-  }
-
-  if (!validarNumeroCoordenada(longitude, -180, 180)) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Longitude inválida.',
-    });
-  }
-
-  const motivoLimpo = limparTexto(motivo, LIMITE_MOTIVO, '');
-
-  if (!motivoLimpo) {
-    return res.status(400).json({
-      ok: false,
-      error: 'Motivo do SOS não informado.',
-    });
-  }
-
-  const usuarioLimpo = limparTexto(
-    usuario,
-    LIMITE_USUARIO,
-    'Membro do Trilha-4X4'
-  );
-
-  const alerta = {
-    id: `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
-    latitude,
-    longitude,
-    motivo: motivoLimpo,
-    usuario: usuarioLimpo,
-    dataHora: new Date().toISOString(),
-    status: 'ativo',
-  };
-
-  alertasSOS.unshift(alerta);
-
-  if (alertasSOS.length > MAX_ALERTAS) {
-    alertasSOS.splice(MAX_ALERTAS);
-  }
-
-  console.log('🚨 NOVO ALERTA SOS:', alerta);
-
-  transmitirEvento('novo-alerta', alerta);
-
-  return res.status(201).json({
-    ok: true,
-    mensagem: 'Alerta SOS recebido e distribuído aos clientes conectados.',
-    alerta,
-  });
-});
-
-app.get('/api/sos', (_req, res) => {
-  return res.json({
-    ok: true,
-    total: alertasSOS.length,
-    alertas: alertasSOS,
-  });
-});
-
-app.get('/api/sos/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
-  if (typeof res.flushHeaders === 'function') {
-    res.flushHeaders();
-  }
-
-  const cliente = {
-    res,
-    conectadoEm: new Date().toISOString(),
-  };
-
-  clientesSOS.add(cliente);
-
-  console.log(
-    '📡 Cliente conectado ao SOS. Total:',
-    clientesSOS.size
-  );
-
-  res.write(
-    `event: inicial\ndata: ${JSON.stringify({
-      ok: true,
-      alertas: alertasSOS,
-    })}\n\n`
-  );
-
-  const heartbeat = setInterval(() => {
-    try {
-      res.write(': heartbeat\n\n');
-    } catch (erro) {
-      clearInterval(heartbeat);
-      clientesSOS.delete(cliente);
-    }
-  }, 25000);
-
-  req.on('close', () => {
-    clearInterval(heartbeat);
-    clientesSOS.delete(cliente);
-
-    console.log(
-      '📡 Cliente desconectado do SOS. Total:',
-      clientesSOS.size
-    );
-  });
-});
-
-app.delete('/api/sos/:id', (req, res) => {
-  const id = req.params.id;
-
-  const indice = alertasSOS.findIndex(
-    (alerta) => String(alerta.id) === String(id)
-  );
-
-  if (indice === -1) {
-    return res.status(404).json({
-      ok: false,
-      error: 'Alerta SOS não encontrado.',
-    });
-  }
-
-  const alerta = alertasSOS[indice];
-
-  alertasSOS.splice(indice, 1);
-
-  const alertaEncerrado = {
-    ...alerta,
-    status: 'encerrado',
-    encerradoEm: new Date().toISOString(),
-  };
-
-  console.log(
-    '🛑 ALERTA SOS ENCERRADO:',
-    alertaEncerrado
-  );
-
-  transmitirEvento(
-    'alerta-encerrado',
-    alertaEncerrado
-  );
-
-  return res.json({
-    ok: true,
-    mensagem: 'Alerta SOS encerrado.',
-    alerta: alertaEncerrado,
-  });
-});
-
 /*
  * =========================================================
- * ASSISTENTE OPENAI
+ * TRILHAS
  * =========================================================
  */
 
-app.post('/api/chat', async (req, res) => {
-  const message =
-    typeof req.body?.message === 'string'
-      ? req.body.message.trim()
-      : '';
+function gerarCodigoTrilha() {
+  const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let codigo;
 
-  if (!message) {
-    return res.status(400).json({
-      error: 'Envie uma mensagem no campo "message".',
-    });
-  }
+  do {
+    let parte = '';
 
-  if (!process.env.OPENAI_API_KEY) {
-    return res.json({
-      reply: gerarRespostaLocal(message),
-      fallback: true,
-      source: 'local',
-    });
-  }
+    for (let i = 0; i < 5; i++) {
+      parte += caracteres[
+        crypto.randomInt(0, caracteres.length)
+      ];
+    }
 
+    codigo = `4X4-${parte}`;
+  } while (
+    db.prepare(
+      'SELECT id FROM trails WHERE code = ?'
+    ).get(codigo)
+  );
+
+  return codigo;
+}
+
+app.post('/api/trilhas', exigirLogin, (req, res) => {
   try {
-    const response = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      instructions:
-        'Você é o assistente virtual do projeto Movimento 4x4. Responda em português do Brasil de forma clara e objetiva.',
-      input: message,
-    });
+    const {
+      name,
+      type,
+      visibility,
+      startAt,
+      plannedEndAt,
+      releaseAt,
+    } = req.body || {};
 
-    return res.json({
-      reply: response.output_text,
+    if (
+      !name ||
+      String(name).trim().length < 3
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Informe um nome válido para a trilha.',
+      });
+    }
+
+    if (
+      !['passeio', 'privada', 'evento'].includes(type)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Tipo de trilha inválido.',
+      });
+    }
+
+    if (
+      !['publica', 'privada', 'convite'].includes(
+        visibility
+      )
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Tipo de acesso inválido.',
+      });
+    }
+
+    const inicio = new Date(startAt);
+    const fim = new Date(plannedEndAt);
+
+    if (
+      Number.isNaN(inicio.getTime()) ||
+      Number.isNaN(fim.getTime())
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Informe datas válidas.',
+      });
+    }
+
+    if (fim <= inicio) {
+      return res.status(400).json({
+        ok: false,
+        error: 'O término deve ser depois do início.',
+      });
+    }
+
+    let liberacao = null;
+
+    if (releaseAt) {
+      const dataLiberacao = new Date(releaseAt);
+
+      if (
+        Number.isNaN(dataLiberacao.getTime()) ||
+        dataLiberacao < inicio
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            'A liberação da rota não pode ser antes do início da trilha.',
+        });
+      }
+
+      liberacao = dataLiberacao.toISOString();
+    }
+
+    const id = crypto.randomUUID();
+    const code = gerarCodigoTrilha();
+    const agora = new Date().toISOString();
+
+    const safetyEndAt = new Date(
+      fim.getTime() +
+        24 * 60 * 60 * 1000
+    ).toISOString();
+
+    db.prepare(`
+      INSERT INTO trails (
+        id,
+        code,
+        name,
+        type,
+        visibility,
+        creator_id,
+        start_at,
+        planned_end_at,
+        release_at,
+        safety_end_at,
+        status,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+    `).run(
+      id,
+      code,
+      String(name).trim(),
+      type,
+      visibility,
+      req.user.id,
+      inicio.toISOString(),
+      fim.toISOString(),
+      liberacao,
+      safetyEndAt,
+      agora
+    );
+
+    db.prepare(`
+      INSERT INTO trail_members (
+        trail_id,
+        user_id,
+        role,
+        status,
+        joined_at
+      )
+      VALUES (?, ?, 'admin', 'active', ?)
+    `).run(
+      id,
+      req.user.id,
+      agora
+    );
+
+    return res.status(201).json({
+      ok: true,
+      trail: {
+        id,
+        code,
+        name: String(name).trim(),
+        type,
+        visibility,
+        startAt: inicio.toISOString(),
+        plannedEndAt: fim.toISOString(),
+        releaseAt: liberacao,
+        safetyEndAt,
+        status: 'open',
+        role: 'admin',
+      },
     });
   } catch (error) {
     console.error(
-      'Erro ao chamar a API da OpenAI:',
+      'Erro ao criar trilha:',
       error
     );
 
-    return res.json({
-      reply: gerarRespostaLocal(message),
-      fallback: true,
-      source: 'local',
-    });
-  }
-});
-
-/*
- * =========================================================
- * TRATAMENTO DE ERROS
- * =========================================================
- */
-
-app.use((error, _req, res, _next) => {
-  if (
-    error instanceof SyntaxError &&
-    error.status === 400 &&
-    'body' in error
-  ) {
-    return res.status(400).json({
+    return res.status(500).json({
       ok: false,
-      error: 'JSON inválido na requisição.',
+      error:
+        'Não foi possível criar a trilha.',
     });
   }
-
-  console.error('Erro interno:', error);
-
-  return res.status(500).json({
-    ok: false,
-    error: 'Erro interno do servidor.',
-  });
 });
 
-/*
- * =========================================================
- * INICIALIZAÇÃO
- * =========================================================
- */
+app.get('/api/trilhas', exigirLogin, (req, res) => {
+  try {
+    const trilhas = db.prepare(`
+      SELECT
+        trails.id,
+        trails.code,
+        trails.name,
+        trails.type,
+        trails.visibility,
+        trails.start_at AS startAt,
+        trails.planned_end_at AS plannedEndAt,
+        trails.release_at AS releaseAt,
+        trails.safety_end_at AS safetyEndAt,
+        trails.status,
+        trail_members.role
+      FROM trail_members
+      INNER JOIN trails
+        ON trails.id = trail_members.trail_id
+      WHERE trail_members.user_id = ?
+        AND trail_members.status = 'active'
+      ORDER BY trails.start_at DESC
+    `).all(req.user.id);
+
+    return res.json({
+      ok: true,
+      trails: trilhas,
+    });
+  } catch (error) {
+    console.error(
+      'Erro ao listar trilhas:',
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      error:
+        'Não foi possível carregar as trilhas.',
+    });
+  }
+});
 
 app.listen(port, () => {
-  console.log(
-    `Servidor do Trilha-4X4 rodando em http://localhost:${port}`
-  );
-
-  console.log('🆘 Sistema SOS preparado.');
-  console.log('📡 Canal em tempo real: /api/sos/stream');
-  console.log('🔐 Sistema de autenticação preparado.');
+  console.log(`Servidor Trilha 4x4 rodando em http://localhost:${port}`);
 });
-
