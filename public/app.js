@@ -811,12 +811,6 @@ function abrirTrilha(trilhaId) {
   );
 }
 
-function abrirTrilha(trilhaId) {
-  alert(
-    `🛣️ Trilha selecionada!\n\nID da trilha: ${trilhaId}\n\nA tela da trilha será aberta nesta próxima etapa.`
-  );
-}
-
 async function abrirListaTrilhas() {
   try {
     const resposta = await fetch('/api/trilhas');
