@@ -884,6 +884,13 @@ async function abrirDetalhesGrupo(groupId) {
     }
 
     const grupo = dados.group;
+    const agora = Date.now();
+    const rolesAtivos = (grupo.outings || []).filter((o) =>
+      o.status !== 'cancelled' && new Date(o.startsAt).getTime() >= agora
+    );
+    const rolesHistorico = (grupo.outings || []).filter((o) =>
+      o.status === 'cancelled' || new Date(o.startsAt).getTime() < agora
+    );
     document.querySelectorAll('[data-grupos-overlay]').forEach((el) => el.remove());
 
     const overlay = document.createElement('div');
@@ -908,7 +915,10 @@ async function abrirDetalhesGrupo(groupId) {
           <div style="margin:18px 0;padding:14px;border:1px solid #ddd;border-radius:12px;">
             <strong>🔗 Convidar amigos</strong>
             <p style="margin:8px 0;">${grupo.inviteCode ? 'Código atual: <b>' + escaparTextoTrilha(grupo.inviteCode) + '</b>' : 'Gere um código privado para seus amigos entrarem.'}</p>
-            <button id="gerarConviteGrupo" type="button">${grupo.inviteCode ? 'Gerar novo código' : 'Gerar código de convite'}</button>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;">
+              ${grupo.inviteCode ? '<button id="copiarConviteGrupo" type="button">📋 Copiar código</button><button id="compartilharConviteGrupo" type="button">📤 Compartilhar</button>' : ''}
+              <button id="gerarConviteGrupo" type="button">${grupo.inviteCode ? 'Gerar novo código' : 'Gerar código de convite'}</button>
+            </div>
           </div>
         ` : ''}
         <h3>👥 Participantes</h3>
@@ -942,7 +952,7 @@ async function abrirDetalhesGrupo(groupId) {
 
         <h3 style="margin-top:22px;">🗓️ Próximos rolês</h3>
         <div>
-          ${(grupo.outings || []).map((o) => `
+          ${rolesAtivos.map((o) => `
             <div style="padding:14px;margin:8px 0;border:1px solid #ddd;border-radius:12px;">
               <strong>${escaparTextoTrilha(o.title)}</strong><br>
               <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · por ${escaparTextoTrilha(o.creatorName)}</small>
@@ -958,17 +968,28 @@ async function abrirDetalhesGrupo(groupId) {
               ` : ''}
               ${o.status !== 'cancelled' ? `
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                  <button type="button" onclick="editarRoleGrupo('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${encodeURIComponent(o.meetingPoint || '')}','${encodeURIComponent(o.description || '')}','${o.startsAt}')">✏️ Editar</button>
+                  ${grupo.role === 'admin' || o.creatorId === grupo.currentUserId ? `<button type="button" onclick="editarRoleGrupo('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${encodeURIComponent(o.meetingPoint || '')}','${encodeURIComponent(o.description || '')}','${o.startsAt}')">✏️ Editar</button>` : ''}
                   ${grupo.role === 'admin' && o.status !== 'confirmed' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','confirmed')">✅ Confirmar passeio</button>` : ''}
                   ${grupo.role === 'admin' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','cancelled')">Cancelar</button>` : ''}
                   ${o.trailId ? `<button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button>` : grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
                 </div>
               ` : ''}
             </div>
-          `).join('') || '<p>Nenhum rolê combinado ainda.</p>'}
+          `).join('') || '<p>Nenhum próximo rolê combinado.</p>'}
         </div>
 
         <button id="novoRoleGrupo" type="button" style="margin-top:10px;padding:11px;border:0;border-radius:8px;background:#222;color:#fff;">＋ Combinar novo rolê</button>
+
+        <h3 style="margin-top:22px;">📚 Histórico de rolês</h3>
+        <div>
+          ${rolesHistorico.map((o) => `
+            <div style="padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:12px;opacity:.85;">
+              <strong>${escaparTextoTrilha(o.title)}</strong><br>
+              <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · ${o.status === 'cancelled' ? '🚫 Cancelado' : '🏁 Realizado'}</small>
+              ${o.trailId ? `<div style="margin-top:7px;"><button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button></div>` : ''}
+            </div>
+          `).join('') || '<p>Nenhum rolê no histórico.</p>'}
+        </div>
 
         <h3 style="margin-top:22px;">🛣️ Trilhas do grupo</h3>
         <div>
@@ -993,6 +1014,36 @@ async function abrirDetalhesGrupo(groupId) {
     `;
 
     if (!anexarPainelAoModulo(overlay)) document.body.appendChild(overlay);
+
+    const copiarConvite = document.getElementById('copiarConviteGrupo');
+    if (copiarConvite) {
+      copiarConvite.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(grupo.inviteCode);
+          copiarConvite.textContent = '✅ Copiado';
+          setTimeout(() => { copiarConvite.textContent = '📋 Copiar código'; }, 1500);
+        } catch {
+          prompt('Copie o código do grupo:', grupo.inviteCode);
+        }
+      };
+    }
+
+    const compartilharConvite = document.getElementById('compartilharConviteGrupo');
+    if (compartilharConvite) {
+      compartilharConvite.onclick = async () => {
+        const texto = 'Entre no grupo ' + grupo.name + ' no Trilha 4X4. Código: ' + grupo.inviteCode;
+        if (navigator.share) {
+          try { await navigator.share({ title: 'Convite Trilha 4X4', text: texto }); } catch {}
+        } else {
+          try {
+            await navigator.clipboard.writeText(texto);
+            alert('Convite copiado para compartilhar.');
+          } catch {
+            prompt('Copie o convite:', texto);
+          }
+        }
+      };
+    }
 
     const gerarConvite = document.getElementById('gerarConviteGrupo');
     if (gerarConvite) {
