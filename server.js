@@ -2529,7 +2529,7 @@ app.get(
 
     const outings = db.prepare(`
       SELECT o.id, o.title, o.description, o.meeting_point AS meetingPoint,
-             o.starts_at AS startsAt, o.status, u.name AS creatorName,
+             o.starts_at AS startsAt, o.status, o.creator_id AS creatorId, u.name AS creatorName,
              r.response AS myResponse,
              SUM(CASE WHEN all_r.response = 'going' THEN 1 ELSE 0 END) AS goingCount,
              SUM(CASE WHEN all_r.response = 'maybe' THEN 1 ELSE 0 END) AS maybeCount
@@ -2647,6 +2647,59 @@ app.post(
     `).run(id, req.user.id, createdAt);
 
     return res.status(201).json({ ok: true, outing: { id, title } });
+  }
+);
+
+app.put(
+  '/api/grupos/:groupId/roles/:outingId',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, outingId } = req.params;
+    const member = db.prepare('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?')
+      .get(groupId, req.user.id);
+    const outing = db.prepare('SELECT creator_id AS creatorId, status FROM group_outings WHERE id = ? AND group_id = ?')
+      .get(outingId, groupId);
+    if (!member || !outing) return res.status(404).json({ ok: false, error: 'Rolê não encontrado.' });
+    if (member.role !== 'admin' && outing.creatorId !== req.user.id) {
+      return res.status(403).json({ ok: false, error: 'Somente quem criou o rolê ou um administrador pode editá-lo.' });
+    }
+    if (outing.status === 'cancelled') return res.status(400).json({ ok: false, error: 'Este rolê foi cancelado.' });
+
+    const title = limparTexto(req.body?.title, 100, '');
+    const description = limparTexto(req.body?.description, 500, null);
+    const meetingPoint = limparTexto(req.body?.meetingPoint, 160, null);
+    const startsAt = limparTexto(req.body?.startsAt, 40, '');
+    if (title.length < 2 || !startsAt || Number.isNaN(new Date(startsAt).getTime())) {
+      return res.status(400).json({ ok: false, error: 'Informe nome e data válidos para o rolê.' });
+    }
+
+    db.prepare(`
+      UPDATE group_outings
+      SET title = ?, description = ?, meeting_point = ?, starts_at = ?
+      WHERE id = ? AND group_id = ?
+    `).run(title, description, meetingPoint, new Date(startsAt).toISOString(), outingId, groupId);
+    return res.json({ ok: true });
+  }
+);
+
+app.post(
+  '/api/grupos/:groupId/roles/:outingId/status',
+  exigirLogin,
+  (req, res) => {
+    const { groupId, outingId } = req.params;
+    const status = req.body?.status;
+    if (!['planning', 'confirmed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ ok: false, error: 'Status inválido.' });
+    }
+    const member = db.prepare('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?')
+      .get(groupId, req.user.id);
+    if (!member || member.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'Somente administradores podem confirmar ou cancelar o passeio.' });
+    }
+    const result = db.prepare('UPDATE group_outings SET status = ? WHERE id = ? AND group_id = ?')
+      .run(status, outingId, groupId);
+    if (!result.changes) return res.status(404).json({ ok: false, error: 'Rolê não encontrado.' });
+    return res.json({ ok: true, status });
   }
 );
 
