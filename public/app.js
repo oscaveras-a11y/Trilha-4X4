@@ -645,21 +645,21 @@ async function abrirMeu4x4() {
       : [];
 
     overlay.innerHTML = `
-      <div style="background:#fff;color:#000;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+      <div style="background:#151c17;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="margin:0;">🚙 Meu 4x4</h2>
-          <button id="fecharMeu4x4" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+          <button id="fecharMeu4x4" type="button" style="border:0;background:#252e27;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
         </div>
         <div id="listaMeusVeiculos" style="margin:18px 0;">
           ${veiculos.length ? veiculos.map((veiculo) => `
-            <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;line-height:1.6;">
+            <div style="border:1px solid rgba(255,255,255,.11);border-radius:12px;padding:14px;margin-bottom:10px;line-height:1.6;">
               <strong>${escaparTextoTrilha(veiculo.brand)} ${escaparTextoTrilha(veiculo.model)}</strong><br>
               Tipo: ${escaparTextoTrilha(veiculo.type)}<br>
               Ano: ${veiculo.year || '-'} | Cor: ${escaparTextoTrilha(veiculo.color) || '-'}<br>
               Placa: ${escaparTextoTrilha(veiculo.plate) || 'não informada'}
               <button type="button"
                 onclick='editarMeuVeiculo(${JSON.stringify(veiculo)})'
-                style="display:block;margin-top:10px;padding:8px 11px;border:1px solid #222;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold;">
+                style="display:block;margin-top:10px;padding:8px 11px;border:1px solid #222;border-radius:8px;background:#202821;color:#fff;cursor:pointer;font-weight:bold;">
                 ✏️ Editar veículo
               </button>
             </div>
@@ -921,14 +921,14 @@ async function abrirDetalhesGrupo(groupId) {
     ).join('');
 
     overlay.innerHTML = `
-      <div style="background:#fff;color:#000;width:100%;max-width:680px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+      <div style="background:#151c17;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);width:100%;max-width:680px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
           <div><small>GRUPO 4X4</small><h2 style="margin:4px 0 0;">${escaparTextoTrilha(grupo.name)}</h2></div>
           <button id="voltarListaGrupos" type="button">← Voltar</button>
         </div>
 
         ${grupo.role === 'admin' ? `
-          <div style="margin:18px 0;padding:14px;border:1px solid #ddd;border-radius:12px;">
+          <div style="margin:18px 0;padding:14px;border:1px solid rgba(255,255,255,.11);border-radius:12px;">
             <strong>🔗 Convidar amigos</strong>
             <p style="margin:8px 0;">${grupo.inviteCode ? 'Código atual: <b>' + escaparTextoTrilha(grupo.inviteCode) + '</b>' : 'Gere um código privado para seus amigos entrarem.'}</p>
             <div style="display:flex;gap:7px;flex-wrap:wrap;">
@@ -940,7 +940,7 @@ async function abrirDetalhesGrupo(groupId) {
         <h3>👥 Participantes</h3>
         <div>
           ${(grupo.members || []).map((m) => `
-            <div style="padding:10px 0;border-bottom:1px solid #ddd;">
+            <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.11);">
               <strong>${escaparTextoTrilha(m.name)}</strong> ·
               ${m.role === 'admin' ? 'Administrador' : 'Participante'}
               ${grupo.role === 'admin' ? `
@@ -958,7 +958,7 @@ async function abrirDetalhesGrupo(groupId) {
         <button id="sairDoGrupo" type="button" style="margin-top:12px;">🚪 Sair do grupo</button>
 
         <h3 style="margin-top:22px;">💬 Conversa do grupo</h3>
-        <div id="mensagensGrupo" style="height:230px;overflow:auto;border:1px solid #ddd;border-radius:12px;padding:10px;background:#f7f7f7;">
+        <div id="mensagensGrupo" style="height:230px;overflow:auto;border:1px solid rgba(255,255,255,.11);border-radius:12px;padding:10px;background:#0b100d;">
           Carregando conversa...
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;">
@@ -969,7 +969,7 @@ async function abrirDetalhesGrupo(groupId) {
         <h3 style="margin-top:22px;">🗓️ Próximos rolês</h3>
         <div>
           ${rolesAtivos.map((o) => `
-            <div style="padding:14px;margin:8px 0;border:1px solid #ddd;border-radius:12px;">
+            <div style="padding:14px;margin:8px 0;border:1px solid rgba(255,255,255,.11);border-radius:12px;">
               <strong>${escaparTextoTrilha(o.title)}</strong><br>
               <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · por ${escaparTextoTrilha(o.creatorName)}</small>
               ${o.meetingPoint ? '<p>📍 ' + escaparTextoTrilha(o.meetingPoint) + '</p>' : ''}
@@ -1001,7 +1001,7 @@ async function abrirDetalhesGrupo(groupId) {
 
         <button id="novoRoleGrupo" type="button" style="margin-top:10px;padding:11px;border:0;border-radius:8px;background:#222;color:#fff;">＋ Combinar novo rolê</button>
 
-        <div id="participarTrilhaRoleBox" style="display:none;margin-top:14px;padding:14px;border:1px solid #ddd;border-radius:12px;">
+        <div id="participarTrilhaRoleBox" style="display:none;margin-top:14px;padding:14px;border:1px solid rgba(255,255,255,.11);border-radius:12px;">
           <strong>🚙 Escolha o veículo para a trilha</strong>
           <select id="veiculoRoleSelect" style="width:100%;padding:10px;margin:9px 0;">
             ${meusVeiculosGrupo.map((v) => `<option value="${escaparTextoTrilha(v.id)}">${escaparTextoTrilha(v.brand)} ${escaparTextoTrilha(v.model)}</option>`).join('')}
@@ -1016,7 +1016,7 @@ async function abrirDetalhesGrupo(groupId) {
         <h3 style="margin-top:22px;">📚 Histórico de rolês</h3>
         <div>
           ${rolesHistorico.map((o) => `
-            <div style="padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:12px;opacity:.85;">
+            <div style="padding:12px;margin:8px 0;border:1px solid rgba(255,255,255,.11);border-radius:12px;opacity:.85;">
               <strong>${escaparTextoTrilha(o.title)}</strong><br>
               <small>${new Date(o.startsAt).toLocaleString('pt-BR')} · ${o.status === 'cancelled' ? '🚫 Cancelado' : '🏁 Realizado'}</small>
               ${o.trailId ? `<div style="margin-top:7px;"><button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button></div>` : ''}
@@ -1028,7 +1028,7 @@ async function abrirDetalhesGrupo(groupId) {
         <div>
           ${(grupo.trails || []).map((t) =>
             '<button type="button" onclick="abrirTrilha(\'' + t.id + '\')" ' +
-            'style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;">' +
+            'style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border:1px solid rgba(255,255,255,.11);border-radius:10px;background:#fff;cursor:pointer;">' +
             '<strong>' + escaparTextoTrilha(t.name) + '</strong><br>' +
             escaparTextoTrilha(t.code) + '</button>'
           ).join('') || '<p>Nenhuma trilha vinculada ao grupo.</p>'}
@@ -1287,14 +1287,14 @@ async function abrirGrupos() {
     const grupos = Array.isArray(dados.groups) ? dados.groups : [];
 
     overlay.innerHTML = `
-      <div style="background:#fff;color:#000;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+      <div style="background:#151c17;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h2 style="margin:0;">👥 Meus grupos</h2>
-          <button id="fecharGrupos" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+          <button id="fecharGrupos" type="button" style="border:0;background:#252e27;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
         </div>
         <div style="margin:18px 0;">
           ${grupos.length ? grupos.map((grupo) => `
-            <div style="border:1px solid #dbe3ea;border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="border:1px solid rgba(255,255,255,.11);border-radius:12px;padding:14px;margin-bottom:10px;">
               <strong>${escaparTextoTrilha(grupo.name)}</strong><br>
               ${grupo.memberCount} participante(s) · ${escaparTextoTrilha(grupo.role)}
               <button
@@ -1306,7 +1306,7 @@ async function abrirGrupos() {
                 <button
                   type="button"
                   onclick="editarGrupo('${grupo.id}', '${escaparTextoTrilha(grupo.name)}')"
-                  style="display:block;margin-top:10px;padding:9px 12px;border:1px solid #222;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold;"
+                  style="display:block;margin-top:10px;padding:9px 12px;border:1px solid #222;border-radius:8px;background:#202821;color:#fff;cursor:pointer;font-weight:bold;"
                 >✏️ Editar grupo</button>
               ` : ''}
             </div>
@@ -2061,7 +2061,7 @@ async function abrirSolicitacoesAdmin(trilhaId) {
 
     const lista = solicitacoes.length
       ? solicitacoes.map((solicitacao) => `
-        <div style="border:1px solid #dbe3ea;border-radius:14px;padding:16px;margin-bottom:12px;">
+        <div style="border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:16px;margin-bottom:12px;">
           <strong>${escaparTextoTrilha(solicitacao.userName)}</strong><br>
           <small>${escaparTextoTrilha(solicitacao.userEmail)}</small>
           <p style="line-height:1.6;margin:10px 0;">
@@ -2089,10 +2089,10 @@ async function abrirSolicitacoesAdmin(trilhaId) {
       : '<p>Nenhuma solicitação encontrada.</p>';
 
     overlay.innerHTML = `
-      <div style="background:#fff;color:#000;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
+      <div style="background:#151c17;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);width:100%;max-width:620px;max-height:90vh;overflow-y:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <h2 style="margin:0;">Solicitações de entrada</h2>
-          <button id="fecharSolicitacoesAdmin" type="button" style="border:0;background:#e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+          <button id="fecharSolicitacoesAdmin" type="button" style="border:0;background:#252e27;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
         </div>
         ${lista}
       </div>
@@ -2193,7 +2193,7 @@ async function abrirListaTrilhas() {
         ${solicitacoes.map((item) => {
           const visual = statusSolicitacao[item.status] || [item.status, '#334155', '#e2e8f0'];
           return `
-            <div style="border:1px solid #dbe3ea;border-radius:14px;padding:15px;margin-bottom:10px;background:#fff;">
+            <div style="border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:15px;margin-bottom:10px;background:#fff;">
               <strong>${escaparTextoTrilha(item.name)}</strong>
               <div style="margin-top:5px;color:#64748b;font-size:13px;">${escaparTextoTrilha(item.code)}</div>
               <div style="display:inline-block;margin-top:10px;padding:6px 9px;border-radius:9px;background:${visual[2]};color:${visual[1]};font-weight:bold;font-size:13px;">
@@ -2249,7 +2249,7 @@ async function abrirListaTrilhas() {
       conteudo = trilhas.map((trilha) => `
         <div style="
           background:#f8fafc;
-          border:1px solid #dbe3ea;
+          border:1px solid rgba(255,255,255,.11);
           border-radius:16px;
           padding:18px;
           margin-bottom:12px;
@@ -2270,7 +2270,7 @@ async function abrirListaTrilhas() {
             </strong>
 
             <span style="
-              background:#e2e8f0;
+              background:#252e27;color:#fff;
               padding:5px 8px;
               border-radius:8px;
               font-size:12px;
@@ -2400,7 +2400,7 @@ ${trilha.role === 'admin' ? `
             id="fecharListaTrilhas"
             style="
               border:0;
-              background:#e2e8f0;
+              background:#252e27;color:#fff;
               border-radius:10px;
               padding:8px 12px;
               cursor:pointer;
