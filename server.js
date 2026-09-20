@@ -79,31 +79,31 @@ function gerarRespostaLocal(mensagem) {
     texto.includes('olá') ||
     texto.includes('oi')
   ) {
-    return 'Olá! Sou o assistente do Movimento 4x4. Como posso ajudar?';
+    return 'Olá! Sou o assistente do Trilha 4X4. Como posso ajudar?';
   }
 
   if (
     texto.includes('4x4') ||
     texto.includes('movimento')
   ) {
-    return 'O Movimento 4x4 é uma metodologia de rotina, disciplina e foco, com quatro pilares e quatro ações principais para manter progresso consistente.';
+    return 'O Trilha 4X4 ajuda a organizar passeios e eventos off-road, reunir participantes e veículos, acompanhar a trilha e usar recursos de segurança durante o percurso.';
   }
 
   if (
     texto.includes('como funciona') ||
     texto.includes('funciona')
   ) {
-    return 'Ele funciona como uma rotina simples e consistente: definir prioridades, executar de forma disciplinada, revisar resultados e manter continuidade.';
+    return 'O app permite criar e entrar em trilhas por código, cadastrar o veículo, acompanhar participantes e usar recursos de localização e segurança durante o percurso.';
   }
 
   if (
     texto.includes('objetivo') ||
     texto.includes('para que serve')
   ) {
-    return 'O objetivo do 4x4 é fortalecer hábitos, organização e execução prática para atingir metas com mais clareza e consistência.';
+    return 'O objetivo do Trilha 4X4 é facilitar a organização de passeios e eventos off-road e aumentar a segurança e a comunicação entre os participantes.';
   }
 
-  return 'Posso ajudar com informações sobre rotina, objetivos, disciplina e aplicação do Movimento 4x4 no dia a dia.';
+  return 'Posso ajudar com o uso do Trilha 4X4, participação em eventos, veículos, recursos de segurança e dúvidas gerais sobre trilhas off-road.';
 }
 
 
