@@ -115,11 +115,11 @@ function abrirFuncao(page) {
 
     case 'seguranca':
 
-      alert(
-        '🚨 A área de segurança será criada aqui.'
-      );
+     case 'seguranca':
 
-      break;
+  abrirSeguranca();
+
+  break;
 
 
     case 'meu-4x4':
