@@ -302,3 +302,169 @@ footer {
     font-size: 19px;
   }
 }
+.sos-page {
+  margin-top: 25px;
+}
+
+.sos-page-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.sos-page-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #3a2020;
+  font-size: 24px;
+}
+
+.sos-page-header h2 {
+  margin-bottom: 5px;
+  font-size: 20px;
+}
+
+.sos-page-header p {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+
+.location-panel {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.location-panel-icon {
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #222921;
+  font-size: 20px;
+}
+
+.location-panel p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+.reason-panel {
+  margin-top: 25px;
+}
+
+.reason-panel h2 {
+  margin-bottom: 7px;
+  font-size: 20px;
+}
+
+.reason-panel > p {
+  margin-bottom: 15px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+
+.reason-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+
+.reason-button {
+  min-height: 58px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+
+.reason-button:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-dark);
+}
+
+
+.reason-button.selected {
+  background: #202b1b;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+
+.selected-reason {
+  margin-top: 15px;
+  padding: 13px 16px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+
+.sos-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px 18px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+
+.sos-button:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-dark);
+}
+
+
+.sos-status {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+
+@media (max-width: 600px) {
+
+  .reason-list {
+    grid-template-columns: 1fr;
+  }
+
+}

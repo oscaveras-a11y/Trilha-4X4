@@ -115,7 +115,7 @@ function abrirFuncao(page) {
 
     case 'seguranca':
 
-  window.location.href = '/seguranca.html';
+  window.location.href = '/segurança.html';
 
   break;
 

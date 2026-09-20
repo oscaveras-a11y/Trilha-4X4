@@ -1,15 +1,16 @@
-```html
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 
 <head>
 
   <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+
+>
 
   <title>Segurança - Trilha-4X4</title>
 
@@ -18,240 +19,423 @@
     href="/style.css"
   >
 
-</head>
+  <style>
 
+    .realtime-status {
+      margin-top: 15px;
+      padding: 12px 15px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface);
+      font-size: 14px;
+    }
+
+    .realtime-status.online {
+      border-color: #4caf50;
+    }
+
+    .realtime-status.offline {
+      border-color: #d9534f;
+    }
+
+    .alertas-panel {
+      margin-top: 25px;
+    }
+
+    .alertas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .alertas-header h2 {
+      margin: 0;
+    }
+
+    .alertas-contador {
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .alerta-card {
+      margin-top: 12px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+    }
+
+    .alerta-card.novo {
+      border-color: #d9534f;
+      box-shadow: 0 0 0 1px #d9534f;
+    }
+
+    .alerta-titulo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .alerta-motivo {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .alerta-status {
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .alerta-info {
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .alerta-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .alerta-acoes button,
+    .alerta-acoes a {
+      display: inline-block;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .alerta-vazio {
+      padding: 18px;
+      border: 1px dashed var(--border);
+      border-radius: 9px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .sos-button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+
+      .alerta-titulo {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .alerta-acoes {
+        flex-direction: column;
+      }
+
+      .alerta-acoes button,
+      .alerta-acoes a {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+      }
+
+    }
+
+  </style>
+
+</head>
 
 <body>
 
-
   <header class="header">
 
-    <div class="brand">
+```
+<div class="brand">
 
-      <div class="logo">
-        4X4
-      </div>
+  <div class="logo">
+    4X4
+  </div>
 
-      <div class="brand-text">
+  <div class="brand-text">
 
-        <strong>
-          TRILHA-4X4
-        </strong>
+    <strong>
+      TRILHA-4X4
+    </strong>
 
-        <span>
-          Segurança
-        </span>
+    <span>
+      Segurança
+    </span>
 
-      </div>
+  </div>
 
-    </div>
+</div>
 
 
-    <button
-      class="login-button"
-      onclick="window.location.href='/'"
-    >
-      Voltar
-    </button>
+<button
+  class="login-button"
+  type="button"
+  onclick="window.location.href='/'"
+>
+  Voltar
+</button>
+```
 
   </header>
 
-
   <main class="container">
 
+```
+<section class="hero">
 
-    <section class="hero">
+  <h1>
+    🚨 Segurança
+  </h1>
 
-      <h1>
-        🚨 Segurança
-      </h1>
+  <p>
+    Peça ajuda aos membros do Trilha-4X4
+    quando precisar durante sua aventura.
+  </p>
+
+</section>
+
+
+<section class="sos-page">
+
+
+  <div class="sos-page-header">
+
+    <div class="sos-page-icon">
+      🆘
+    </div>
+
+    <div>
+
+      <h2>
+        Preciso de ajuda
+      </h2>
 
       <p>
-        Peça ajuda aos membros do Trilha-4X4
-        quando precisar durante sua aventura.
+        Seu alerta será destinado aos membros
+        conectados ao Trilha-4X4.
       </p>
 
-    </section>
+    </div>
+
+  </div>
 
 
-    <section class="sos-page">
+  <div class="location-panel">
+
+    <div class="location-panel-icon">
+      📍
+    </div>
+
+    <div>
+
+      <strong>
+        Sua localização
+      </strong>
+
+      <p id="locationStatus">
+        A localização ainda não foi obtida.
+      </p>
+
+    </div>
+
+  </div>
 
 
-      <div class="sos-page-header">
-
-        <div class="sos-page-icon">
-          🆘
-        </div>
-
-        <div>
-
-          <h2>
-            Preciso de ajuda
-          </h2>
-
-          <p>
-            Seu alerta será destinado aos membros
-            do Trilha-4X4.
-          </p>
-
-        </div>
-
-      </div>
+  <button
+    id="locationButton"
+    class="location-button"
+    type="button"
+  >
+    📍 Obter minha localização
+  </button>
 
 
-      <div class="location-panel">
+  <div class="reason-panel">
 
-        <div class="location-panel-icon">
-          📍
-        </div>
+    <h2>
+      Qual é o problema?
+    </h2>
 
-        <div>
-
-          <strong>
-            Sua localização
-          </strong>
-
-          <p id="locationStatus">
-            A localização ainda não foi obtida.
-          </p>
-
-        </div>
-
-      </div>
+    <p>
+      Selecione o motivo para ajudar os membros
+      a entenderem a situação.
+    </p>
 
 
-      <button
-        id="locationButton"
-        class="location-button"
-        type="button"
-      >
-        📍 Obter minha localização
-      </button>
-
-
-      <div class="reason-panel">
-
-        <h2>
-          Qual é o problema?
-        </h2>
-
-        <p>
-          Selecione o motivo para ajudar os membros
-          a entenderem a situação.
-        </p>
-
-
-        <div class="reason-list">
-
-
-          <button
-            type="button"
-            class="reason-button"
-            data-reason="Quebra do veículo"
-          >
-            🚙
-            <span>
-              Quebra do veículo
-            </span>
-          </button>
-
-
-          <button
-            type="button"
-            class="reason-button"
-            data-reason="Atolado"
-          >
-            🛞
-            <span>
-              Atolado
-            </span>
-          </button>
-
-
-          <button
-            type="button"
-            class="reason-button"
-            data-reason="Problema mecânico"
-          >
-            🔧
-            <span>
-              Problema mecânico
-            </span>
-          </button>
-
-
-          <button
-            type="button"
-            class="reason-button"
-            data-reason="Acidente"
-          >
-            💥
-            <span>
-              Acidente
-            </span>
-          </button>
-
-
-          <button
-            type="button"
-            class="reason-button"
-            data-reason="Outro"
-          >
-            🆘
-            <span>
-              Outro
-            </span>
-          </button>
-
-
-        </div>
-
-      </div>
-
-
-      <div
-        id="selectedReason"
-        class="selected-reason"
-      >
-        Nenhum motivo selecionado.
-      </div>
+    <div class="reason-list">
 
 
       <button
-        id="sosButton"
-        class="sos-button"
         type="button"
+        class="reason-button"
+        data-reason="Quebra do veículo"
       >
-        🆘 ENVIAR ALERTA
+        🚙
+        <span>
+          Quebra do veículo
+        </span>
       </button>
 
 
-      <div
-        id="sosStatus"
-        class="sos-status"
-      ></div>
+      <button
+        type="button"
+        class="reason-button"
+        data-reason="Atolado"
+      >
+        🛞
+        <span>
+          Atolado
+        </span>
+      </button>
 
 
-    </section>
+      <button
+        type="button"
+        class="reason-button"
+        data-reason="Problema mecânico"
+      >
+        🔧
+        <span>
+          Problema mecânico
+        </span>
+      </button>
 
+
+      <button
+        type="button"
+        class="reason-button"
+        data-reason="Acidente"
+      >
+        💥
+        <span>
+          Acidente
+        </span>
+      </button>
+
+
+      <button
+        type="button"
+        class="reason-button"
+        data-reason="Outro"
+      >
+        🆘
+        <span>
+          Outro
+        </span>
+      </button>
+
+
+    </div>
+
+  </div>
+
+
+  <div
+    id="selectedReason"
+    class="selected-reason"
+  >
+    Nenhum motivo selecionado.
+  </div>
+
+
+  <button
+    id="sosButton"
+    class="sos-button"
+    type="button"
+  >
+    🆘 ENVIAR ALERTA
+  </button>
+
+
+  <div
+    id="sosStatus"
+    class="sos-status"
+  ></div>
+
+
+  <div
+    id="realtimeStatus"
+    class="realtime-status"
+  >
+    📡 Conectando ao sistema de alertas...
+  </div>
+
+
+</section>
+
+
+<section class="alertas-panel">
+
+
+  <div class="alertas-header">
+
+    <h2>
+      🚨 Alertas ativos
+    </h2>
+
+    <span
+      id="alertasContador"
+      class="alertas-contador"
+    >
+      0 alertas
+    </span>
+
+  </div>
+
+
+  <div
+    id="alertasLista"
+  >
+
+    <div class="alerta-vazio">
+      Nenhum alerta ativo no momento.
+    </div>
+
+  </div>
+
+
+</section>
+```
 
   </main>
 
-
   <footer>
 
-    <span>
-      Trilha-4X4
-    </span>
+```
+<span>
+  Trilha-4X4
+</span>
 
-    <span>
-      © 2026
-    </span>
+<span>
+  © 2026
+</span>
+```
 
   </footer>
 
-
   <script>
+
+    /*
+      ========================================================
+      VARIÁVEIS
+      ========================================================
+    */
 
     let latitude = null;
 
@@ -259,64 +443,120 @@
 
     let motivoSelecionado = null;
 
+    let meuAlertaId = null;
+
+    let conexaoSOS = null;
+
+
+    /*
+      ========================================================
+      ELEMENTOS DA PÁGINA
+      ========================================================
+    */
 
     const locationButton =
-      document.getElementById('locationButton');
+      document.getElementById(
+        'locationButton'
+      );
 
 
     const locationStatus =
-      document.getElementById('locationStatus');
+      document.getElementById(
+        'locationStatus'
+      );
 
 
     const sosButton =
-      document.getElementById('sosButton');
+      document.getElementById(
+        'sosButton'
+      );
 
 
     const sosStatus =
-      document.getElementById('sosStatus');
+      document.getElementById(
+        'sosStatus'
+      );
 
 
     const selectedReason =
-      document.getElementById('selectedReason');
+      document.getElementById(
+        'selectedReason'
+      );
 
+
+    const realtimeStatus =
+      document.getElementById(
+        'realtimeStatus'
+      );
+
+
+    const alertasLista =
+      document.getElementById(
+        'alertasLista'
+      );
+
+
+    const alertasContador =
+      document.getElementById(
+        'alertasContador'
+      );
+
+
+    /*
+      ========================================================
+      SELEÇÃO DO MOTIVO
+      ========================================================
+    */
 
     document
       .querySelectorAll('.reason-button')
-      .forEach(button => {
+      .forEach(
+        button => {
 
-        button.addEventListener(
-          'click',
-          () => {
+          button.addEventListener(
+            'click',
+            () => {
 
-            document
-              .querySelectorAll('.reason-button')
-              .forEach(item => {
+              document
+                .querySelectorAll(
+                  '.reason-button'
+                )
+                .forEach(
+                  item => {
 
-                item.classList.remove(
-                  'selected'
+                    item.classList.remove(
+                      'selected'
+                    );
+
+                  }
                 );
 
-              });
+
+              button.classList.add(
+                'selected'
+              );
 
 
-            button.classList.add(
-              'selected'
-            );
+              motivoSelecionado =
+                button.dataset.reason;
 
 
-            motivoSelecionado =
-              button.dataset.reason;
+              selectedReason.textContent =
+                'Motivo selecionado: ' +
+                motivoSelecionado;
+
+            }
+          );
+
+        }
+      );
 
 
-            selectedReason.textContent =
-              'Motivo selecionado: ' +
-              motivoSelecionado;
-
-          }
-        );
-
-      });
-
+    /*
+      ========================================================
+      BOTÕES
+      ========================================================
+    */
 
     locationButton.addEventListener(
       'click',
@@ -330,9 +570,17 @@
     );
 
 
+    /*
+      ========================================================
+      LOCALIZAÇÃO
+      ========================================================
+    */
+
     function obterLocalizacao() {
 
-      if (!navigator.geolocation) {
+      if (
+        !navigator.geolocation
+      ) {
 
         locationStatus.textContent =
           'Seu dispositivo não suporta localização.';
@@ -342,7 +590,9 @@
       }
 
 
-      locationButton.disabled = true;
+      locationButton.disabled =
+        true;
+
 
       locationButton.textContent =
         'Obtendo localização...';
@@ -354,6 +604,7 @@
 
           latitude =
             position.coords.latitude;
+
 
           longitude =
             position.coords.longitude;
@@ -371,7 +622,9 @@
           locationButton.textContent =
             '📍 Localização obtida';
 
-          locationButton.disabled = false;
+
+          locationButton.disabled =
+            false;
 
         },
 
@@ -391,7 +644,9 @@
           locationButton.textContent =
             '📍 Tentar novamente';
 
-          locationButton.disabled = false;
+
+          locationButton.disabled =
+            false;
 
         },
 
@@ -407,7 +662,13 @@
     }
 
 
-    function enviarAlerta() {
+    /*
+      ========================================================
+      ENVIAR ALERTA
+      ========================================================
+    */
+
+    async function enviarAlerta() {
 
       if (
         latitude === null ||
@@ -423,7 +684,9 @@
       }
 
 
-      if (!motivoSelecionado) {
+      if (
+        !motivoSelecionado
+      ) {
 
         alert(
           'Selecione o motivo do pedido de ajuda.'
@@ -440,7 +703,7 @@
           'Motivo: ' +
           motivoSelecionado +
           '\n\n' +
-          'Sua localização será enviada aos membros do Trilha-4X4.'
+          'Sua localização será enviada aos membros conectados do Trilha-4X4.'
         );
 
 
@@ -451,55 +714,1112 @@
       }
 
 
-      sosButton.disabled = true;
+      sosButton.disabled =
+        true;
+
 
       sosButton.textContent =
         'ENVIANDO ALERTA...';
 
 
-      /*
-        Nesta etapa o alerta ainda não é enviado
-        ao servidor.
-
-        Na próxima etapa vamos conectar esta função
-        ao server.js e enviar:
-
-        - localização
-        - motivo
-        - usuário
-        - data/hora
-      */
+      sosStatus.innerHTML =
+        'Enviando alerta ao servidor...';
 
 
-      console.log(
-        'ALERTA SOS',
-        {
-          latitude,
-          longitude,
-          motivo: motivoSelecionado
+      try {
+
+        const resposta =
+          await fetch(
+            '/api/sos',
+            {
+
+              method:
+                'POST',
+
+              headers:
+                {
+                  'Content-Type':
+                    'application/json'
+                },
+
+              body:
+                JSON.stringify(
+                  {
+                    latitude:
+                      latitude,
+
+                    longitude:
+                      longitude,
+
+                    motivo:
+                      motivoSelecionado,
+
+                    usuario:
+                      'Membro do Trilha-4X4'
+                  }
+                )
+
+            }
+          );
+
+
+        const dados =
+          await resposta.json();
+
+
+        if (
+          !resposta.ok
+        ) {
+
+          throw new Error(
+            dados.error ||
+            'Erro ao enviar o alerta.'
+          );
+
+        }
+
+
+        console.log(
+          'SOS enviado:',
+          dados
+        );
+
+
+        if (
+          dados.alerta &&
+          dados.alerta.id
+        ) {
+
+          meuAlertaId =
+            dados.alerta.id;
+
+        }
+
+
+        sosStatus.innerHTML =
+          '<strong>🚨 ALERTA ENVIADO</strong><br>' +
+          'Motivo: ' +
+          motivoSelecionado +
+          '<br>' +
+          'Sua localização foi enviada ao servidor.';
+
+
+        sosButton.textContent =
+          '🛑 ENCERRAR MEU ALERTA';
+
+
+        sosButton.disabled =
+          false;
+
+
+      } catch (erro) {
+
+        console.error(
+          'Erro ao enviar SOS:',
+          erro
+        );
+
+
+        sosStatus.innerHTML =
+          '❌ Não foi possível enviar o alerta.<br>' +
+          'Verifique se o servidor está funcionando.';
+
+
+        sosButton.disabled =
+          false;
+
+
+        sosButton.textContent =
+          '🆘 ENVIAR ALERTA';
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      CONEXÃO SOS EM TEMPO REAL
+      ========================================================
+    */
+
+    function conectarSOS() {
+
+      if (
+        !window.EventSource
+      ) {
+
+        realtimeStatus.textContent =
+          '⚠️ Seu navegador não suporta alertas em tempo real.';
+
+        realtimeStatus.classList.add(
+          'offline'
+        );
+
+        return;
+
+      }
+
+
+      realtimeStatus.textContent =
+        '📡 Conectando ao sistema de alertas...';
+
+
+      realtimeStatus.classList.remove(
+        'online',
+        'offline'
+      );
+
+
+      conexaoSOS =
+        new EventSource(
+          '/api/sos/stream'
+        );
+
+
+      conexaoSOS.onopen =
+        function() {
+
+          realtimeStatus.textContent =
+            '🟢 Sistema de alertas conectado em tempo real.';
+
+          realtimeStatus.classList.remove(
+            'offline'
+          );
+
+          realtimeStatus.classList.add(
+            'online'
+          );
+
+        };
+
+
+      conexaoSOS.addEventListener(
+        'inicial',
+        function(event) {
+
+          try {
+
+            const dados =
+              JSON.parse(
+                event.data
+              );
+
+
+            if (
+              dados &&
+              Array.isArray(
+                dados.alertas
+              )
+            ) {
+
+              renderizarAlertas(
+                dados.alertas
+              );
+
+            }
+
+          } catch (erro) {
+
+            console.error(
+              'Erro ao processar alertas iniciais:',
+              erro
+            );
+
+          }
+
         }
       );
 
 
-      sosStatus.innerHTML =
-        '<strong>🚨 ALERTA PREPARADO</strong><br>' +
-        'Motivo: ' +
-        motivoSelecionado +
-        '<br>' +
-        'Sua localização foi identificada.<br><br>' +
-        'Na próxima etapa vamos conectar este alerta aos membros do Trilha-4X4.';
+      conexaoSOS.addEventListener(
+        'novo-alerta',
+        function(event) {
+
+          try {
+
+            const alerta =
+              JSON.parse(
+                event.data
+              );
 
 
-      sosButton.textContent =
-        '🚨 ALERTA ATIVO';
+            adicionarAlerta(
+              alerta,
+              true
+            );
+
+
+            /*
+              Se o alerta foi criado nesta própria página,
+              atualiza a identificação local.
+            */
+
+            if (
+              alerta &&
+              meuAlertaId &&
+              String(alerta.id) ===
+              String(meuAlertaId)
+            ) {
+
+              sosStatus.innerHTML =
+                '<strong>🚨 SEU ALERTA ESTÁ ATIVO</strong><br>' +
+                'Os membros conectados receberam o alerta.<br>' +
+                'Motivo: ' +
+                alerta.motivo;
+
+            }
+
+          } catch (erro) {
+
+            console.error(
+              'Erro ao processar novo SOS:',
+              erro
+            );
+
+          }
+
+        }
+      );
+
+
+      conexaoSOS.addEventListener(
+        'alerta-encerrado',
+        function(event) {
+
+          try {
+
+            const alerta =
+              JSON.parse(
+                event.data
+              );
+
+
+            removerAlerta(
+              alerta.id
+            );
+
+
+            if (
+              meuAlertaId &&
+              String(alerta.id) ===
+              String(meuAlertaId)
+            ) {
+
+              meuAlertaId =
+                null;
+
+
+              sosStatus.innerHTML =
+                '🟢 Seu alerta foi encerrado.';
+
+
+              sosButton.textContent =
+                '🆘 ENVIAR ALERTA';
+
+            }
+
+          } catch (erro) {
+
+            console.error(
+              'Erro ao processar encerramento:',
+              erro
+            );
+
+          }
+
+        }
+      );
+
+
+      conexaoSOS.onerror =
+        function() {
+
+          realtimeStatus.textContent =
+            '🟠 Conexão interrompida. Tentando reconectar...';
+
+          realtimeStatus.classList.remove(
+            'online'
+          );
+
+          realtimeStatus.classList.add(
+            'offline'
+          );
+
+        };
 
     }
 
-  </script>
 
+    /*
+      ========================================================
+      RENDERIZAR ALERTAS
+      ========================================================
+    */
+
+    function renderizarAlertas(
+      alertas
+    ) {
+
+      alertasLista.innerHTML =
+        '';
+
+
+      if (
+        !alertas ||
+        alertas.length === 0
+      ) {
+
+        alertasLista.innerHTML =
+          '<div class="alerta-vazio">' +
+          'Nenhum alerta ativo no momento.' +
+          '</div>';
+
+        atualizarContador(
+          0
+        );
+
+        return;
+
+      }
+
+
+      alertas.forEach(
+        alerta => {
+
+          adicionarAlerta(
+            alerta,
+            false
+          );
+
+        }
+      );
+
+
+      atualizarContador(
+        alertas.length
+      );
+
+    }
+
+
+    /*
+      ========================================================
+      ADICIONAR UM ALERTA
+      ========================================================
+    */
+
+    function adicionarAlerta(
+      alerta,
+      destacar
+    ) {
+
+      if (
+        !alerta ||
+        !alerta.id
+      ) {
+
+        return;
+
+      }
+
+
+      /*
+        Evita duplicar o mesmo alerta.
+      */
+
+      const existente =
+        document.getElementById(
+          'alerta-' +
+          criarIdSeguro(
+            alerta.id
+          )
+        );
+
+
+      if (
+        existente
+      ) {
+
+        if (
+          destacar
+        ) {
+
+          existente.classList.add(
+            'novo'
+          );
+
+        }
+
+        return;
+
+      }
+
+
+      const vazio =
+        alertasLista.querySelector(
+          '.alerta-vazio'
+        );
+
+
+      if (
+        vazio
+      ) {
+
+        vazio.remove();
+
+      }
+
+
+      const card =
+        document.createElement(
+          'div'
+        );
+
+
+      card.className =
+        'alerta-card';
+
+
+      if (
+        destacar
+      ) {
+
+        card.classList.add(
+          'novo'
+        );
+
+      }
+
+
+      card.id =
+        'alerta-' +
+        criarIdSeguro(
+          alerta.id
+        );
+
+
+      const titulo =
+        document.createElement(
+          'div'
+        );
+
+
+      titulo.className =
+        'alerta-titulo';
+
+
+      const motivo =
+        document.createElement(
+          'div'
+        );
+
+
+      motivo.className =
+        'alerta-motivo';
+
+
+      motivo.textContent =
+        '🚨 ' +
+        (alerta.motivo ||
+          'Pedido de ajuda');
+
+
+      const status =
+        document.createElement(
+          'div'
+        );
+
+
+      status.className =
+        'alerta-status';
+
+
+      status.textContent =
+        'ATIVO';
+
+
+      titulo.appendChild(
+        motivo
+      );
+
+
+      titulo.appendChild(
+        status
+      );
+
+
+      const info =
+        document.createElement(
+          'div'
+        );
+
+
+      info.className =
+        'alerta-info';
+
+
+      const dataFormatada =
+        formatarData(
+          alerta.dataHora
+        );
+
+
+      info.innerHTML =
+        '<strong>👤 Usuário:</strong> ' +
+        escapeHtml(
+          alerta.usuario ||
+          'Membro do Trilha-4X4'
+        ) +
+        '<br>' +
+        '<strong>📍 Latitude:</strong> ' +
+        Number(
+          alerta.latitude
+        ).toFixed(6) +
+        '<br>' +
+        '<strong>📍 Longitude:</strong> ' +
+        Number(
+          alerta.longitude
+        ).toFixed(6) +
+        '<br>' +
+        '<strong>🕐 Horário:</strong> ' +
+        escapeHtml(
+          dataFormatada
+        );
+
+
+      const acoes =
+        document.createElement(
+          'div'
+        );
+
+
+      acoes.className =
+        'alerta-acoes';
+
+
+      const mapa =
+        document.createElement(
+          'a'
+        );
+
+
+      mapa.href =
+        'https://www.openstreetmap.org/?mlat=' +
+        encodeURIComponent(
+          alerta.latitude
+        ) +
+        '&mlon=' +
+        encodeURIComponent(
+          alerta.longitude
+        ) +
+        '#map=16/' +
+        encodeURIComponent(
+          alerta.latitude
+        ) +
+        '/' +
+        encodeURIComponent(
+          alerta.longitude
+        );
+
+
+      mapa.target =
+        '_blank';
+
+
+      mapa.rel =
+        'noopener noreferrer';
+
+
+      mapa.textContent =
+        '📍 Ver localização';
+
+
+      acoes.appendChild(
+        mapa
+      );
+
+
+      const encerrar =
+        document.createElement(
+          'button'
+        );
+
+
+      encerrar.type =
+        'button';
+
+
+      encerrar.textContent =
+        '🛑 Encerrar alerta';
+
+
+      encerrar.addEventListener(
+        'click',
+        function() {
+
+          encerrarAlerta(
+            alerta.id
+          );
+
+        }
+      );
+
+
+      acoes.appendChild(
+        encerrar
+      );
+
+
+      card.appendChild(
+        titulo
+      );
+
+      card.appendChild(
+        info
+      );
+
+      card.appendChild(
+        acoes
+      );
+
+
+      alertasLista.prepend(
+        card
+      );
+
+
+      atualizarContador(
+        document.querySelectorAll(
+          '.alerta-card'
+        ).length
+      );
+
+
+      if (
+        destacar
+      ) {
+
+        emitirAvisoNovoAlerta(
+          alerta
+        );
+
+
+        setTimeout(
+          function() {
+
+            card.classList.remove(
+              'novo'
+            );
+
+          },
+          8000
+        );
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      REMOVER ALERTA
+      ========================================================
+    */
+
+    function removerAlerta(
+      id
+    ) {
+
+      const card =
+        document.getElementById(
+          'alerta-' +
+          criarIdSeguro(
+            id
+          )
+        );
+
+
+      if (
+        card
+      ) {
+
+        card.remove();
+
+      }
+
+
+      const quantidade =
+        document.querySelectorAll(
+          '.alerta-card'
+        ).length;
+
+
+      atualizarContador(
+        quantidade
+      );
+
+
+      if (
+        quantidade === 0
+      ) {
+
+        alertasLista.innerHTML =
+          '<div class="alerta-vazio">' +
+          'Nenhum alerta ativo no momento.' +
+          '</div>';
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      ENCERRAR ALERTA
+      ========================================================
+    */
+
+    async function encerrarAlerta(
+      id
+    ) {
+
+      const confirmar =
+        confirm(
+          'Deseja realmente encerrar este alerta SOS?'
+        );
+
+
+      if (
+        !confirmar
+      ) {
+
+        return;
+
+      }
+
+
+      try {
+
+        const resposta =
+          await fetch(
+            '/api/sos/' +
+            encodeURIComponent(
+              id
+            ),
+            {
+              method:
+                'DELETE'
+            }
+          );
+
+
+        const dados =
+          await resposta.json();
+
+
+        if (
+          !resposta.ok
+        ) {
+
+          throw new Error(
+            dados.error ||
+            'Não foi possível encerrar o alerta.'
+          );
+
+        }
+
+
+        /*
+          O servidor transmitirá o encerramento
+          para os clientes conectados.
+        */
+
+        console.log(
+          'Alerta encerrado:',
+          dados
+        );
+
+
+      } catch (erro) {
+
+        console.error(
+          'Erro ao encerrar alerta:',
+          erro
+        );
+
+
+        alert(
+          '❌ Não foi possível encerrar o alerta.'
+        );
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      CONTADOR
+      ========================================================
+    */
+
+    function atualizarContador(
+      quantidade
+    ) {
+
+      alertasContador.textContent =
+        quantidade +
+        (
+          quantidade === 1
+            ? ' alerta'
+            : ' alertas'
+        );
+
+    }
+
+
+    /*
+      ========================================================
+      AVISO DE NOVO ALERTA
+      ========================================================
+    */
+
+    function emitirAvisoNovoAlerta(
+      alerta
+    ) {
+
+      if (
+        alerta &&
+        meuAlertaId &&
+        String(alerta.id) ===
+        String(meuAlertaId)
+      ) {
+
+        return;
+
+      }
+
+
+      try {
+
+        if (
+          'Notification' in window &&
+          Notification.permission ===
+          'granted'
+        ) {
+
+          new Notification(
+            '🚨 Novo alerta Trilha-4X4',
+            {
+              body:
+                (
+                  alerta.motivo ||
+                  'Pedido de ajuda'
+                ) +
+                ' - ' +
+                (
+                  alerta.usuario ||
+                  'Membro'
+                )
+            }
+          );
+
+        }
+
+      } catch (erro) {
+
+        console.log(
+          'Notificação do navegador não disponível.'
+        );
+
+      }
+
+
+      try {
+
+        if (
+          navigator.vibrate
+        ) {
+
+          navigator.vibrate(
+            [300, 150, 300]
+          );
+
+        }
+
+      } catch (erro) {
+
+        console.log(
+          'Vibração não disponível.'
+        );
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      FORMATA DATA
+      ========================================================
+    */
+
+    function formatarData(
+      valor
+    ) {
+
+      if (
+        !valor
+      ) {
+
+        return 'Horário não informado';
+
+      }
+
+
+      const data =
+        new Date(
+          valor
+        );
+
+
+      if (
+        Number.isNaN(
+          data.getTime()
+        )
+      ) {
+
+        return 'Horário não informado';
+
+      }
+
+
+      return data.toLocaleString(
+        'pt-BR'
+      );
+
+    }
+
+
+    /*
+      ========================================================
+      ID SEGURO PARA O HTML
+      ========================================================
+    */
+
+    function criarIdSeguro(
+      valor
+    ) {
+
+      return String(
+        valor
+      ).replace(
+        /[^a-zA-Z0-9_-]/g,
+        '_'
+      );
+
+    }
+
+
+    /*
+      ========================================================
+      ESCAPE DE TEXTO
+      ========================================================
+    */
+
+    function escapeHtml(
+      valor
+    ) {
+
+      return String(
+        valor
+      )
+        .replace(
+          /&/g,
+          '&amp;'
+        )
+        .replace(
+          /</g,
+          '&lt;'
+        )
+        .replace(
+          />/g,
+          '&gt;'
+        )
+        .replace(
+          /"/g,
+          '&quot;'
+        )
+        .replace(
+          /'/g,
+          '&#039;'
+        );
+
+    }
+
+
+    /*
+      ========================================================
+      INICIAR SISTEMA
+      ========================================================
+    */
+
+    conectarSOS();
+
+
+    /*
+      Solicita permissão para notificações do navegador
+      somente depois que o usuário interagir com a página.
+    */
+
+    document.addEventListener(
+      'click',
+      function solicitarNotificacao() {
+
+        if (
+          'Notification' in window &&
+          Notification.permission ===
+          'default'
+        ) {
+
+          Notification.requestPermission()
+            .catch(
+              () => {}
+            );
+
+        }
+
+        document.removeEventListener(
+          'click',
+          solicitarNotificacao
+        );
+
+      }
+    );
+
+
+    /*
+      Antes de sair da página, fecha a conexão SSE.
+    */
+
+    window.addEventListener(
+      'beforeunload',
+      function() {
+
+        if (
+          conexaoSOS
+        ) {
+
+          conexaoSOS.close();
+
+        }
+
+      }
+    );
+
+  </script>
 
 </body>
 
 </html>
-```
-
