@@ -834,6 +834,16 @@ async function alterarStatusRoleGrupo(groupId, outingId, status) {
   abrirDetalhesGrupo(groupId);
 }
 
+let participacaoRolePendente = null;
+
+function solicitarTrilhaDoRole(groupId, outingId) {
+  const box = document.getElementById('participarTrilhaRoleBox');
+  if (!box) return;
+  participacaoRolePendente = { groupId, outingId };
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function criarTrilhaDoRole(groupId, outingId, titleEncoded, startsAt) {
   const titulo = decodeURIComponent(titleEncoded);
   const params = new URLSearchParams({
@@ -884,6 +894,12 @@ async function abrirDetalhesGrupo(groupId) {
     }
 
     const grupo = dados.group;
+    let meusVeiculosGrupo = [];
+    try {
+      const respostaVeiculosGrupo = await fetch('/api/veiculos', { cache: 'no-store' });
+      const dadosVeiculosGrupo = await respostaVeiculosGrupo.json();
+      if (respostaVeiculosGrupo.ok) meusVeiculosGrupo = dadosVeiculosGrupo.vehicles || [];
+    } catch {}
     const agora = Date.now();
     const rolesAtivos = (grupo.outings || []).filter((o) =>
       o.status !== 'cancelled' && new Date(o.startsAt).getTime() >= agora
@@ -971,7 +987,12 @@ async function abrirDetalhesGrupo(groupId) {
                   ${grupo.role === 'admin' || o.creatorId === grupo.currentUserId ? `<button type="button" onclick="editarRoleGrupo('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${encodeURIComponent(o.meetingPoint || '')}','${encodeURIComponent(o.description || '')}','${o.startsAt}')">✏️ Editar</button>` : ''}
                   ${grupo.role === 'admin' && o.status !== 'confirmed' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','confirmed')">✅ Confirmar passeio</button>` : ''}
                   ${grupo.role === 'admin' ? `<button type="button" onclick="alterarStatusRoleGrupo('${grupo.id}','${o.id}','cancelled')">Cancelar</button>` : ''}
-                  ${o.trailId ? `<button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button>` : grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
+                  ${o.trailId ? `
+                    <button type="button" onclick="abrirTrilha('${o.trailId}')">🛻 Abrir trilha</button>
+                    ${grupo.role !== 'admin' && o.myResponse === 'going' ? `
+                      <button type="button" onclick="solicitarTrilhaDoRole('${grupo.id}','${o.id}')">🙋 Solicitar participação na trilha</button>
+                    ` : ''}
+                  ` : grupo.role === 'admin' && o.status === 'confirmed' ? `<button type="button" onclick="criarTrilhaDoRole('${grupo.id}','${o.id}','${encodeURIComponent(o.title)}','${o.startsAt}')">🛻 Criar trilha</button>` : ''}
                 </div>
               ` : ''}
             </div>
@@ -979,6 +1000,18 @@ async function abrirDetalhesGrupo(groupId) {
         </div>
 
         <button id="novoRoleGrupo" type="button" style="margin-top:10px;padding:11px;border:0;border-radius:8px;background:#222;color:#fff;">＋ Combinar novo rolê</button>
+
+        <div id="participarTrilhaRoleBox" style="display:none;margin-top:14px;padding:14px;border:1px solid #ddd;border-radius:12px;">
+          <strong>🚙 Escolha o veículo para a trilha</strong>
+          <select id="veiculoRoleSelect" style="width:100%;padding:10px;margin:9px 0;">
+            ${meusVeiculosGrupo.map((v) => `<option value="${escaparTextoTrilha(v.id)}">${escaparTextoTrilha(v.brand)} ${escaparTextoTrilha(v.model)}</option>`).join('')}
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button id="confirmarParticipacaoRole" type="button">Enviar solicitação</button>
+            <button id="cancelarParticipacaoRole" type="button">Cancelar</button>
+          </div>
+          ${meusVeiculosGrupo.length ? '' : '<p>Cadastre um veículo em Meu 4x4 antes de solicitar participação.</p>'}
+        </div>
 
         <h3 style="margin-top:22px;">📚 Histórico de rolês</h3>
         <div>
@@ -1131,6 +1164,44 @@ async function abrirDetalhesGrupo(groupId) {
 
     atualizarChatGrupo();
     chatGrupoTimer = setInterval(atualizarChatGrupo, 5000);
+
+    const confirmarParticipacaoRole = document.getElementById('confirmarParticipacaoRole');
+    const cancelarParticipacaoRole = document.getElementById('cancelarParticipacaoRole');
+    if (cancelarParticipacaoRole) cancelarParticipacaoRole.onclick = () => {
+      participacaoRolePendente = null;
+      document.getElementById('participarTrilhaRoleBox').style.display = 'none';
+    };
+    if (confirmarParticipacaoRole) confirmarParticipacaoRole.onclick = async () => {
+      if (!participacaoRolePendente) return;
+      const select = document.getElementById('veiculoRoleSelect');
+      const vehicleId = select?.value;
+      if (!vehicleId) {
+        alert('Cadastre e escolha um veículo antes de continuar.');
+        return;
+      }
+      const { groupId: grupoIdRole, outingId: passeioIdRole } = participacaoRolePendente;
+      const respostaParticipacao = await fetch(
+        '/api/grupos/' + encodeURIComponent(grupoIdRole) + '/roles/' +
+        encodeURIComponent(passeioIdRole) + '/entrar-trilha',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleId }),
+        }
+      );
+      const dadosParticipacao = await respostaParticipacao.json();
+      if (!respostaParticipacao.ok) {
+        alert(dadosParticipacao.error || 'Não foi possível solicitar participação.');
+        return;
+      }
+      alert(dadosParticipacao.alreadyMember
+        ? 'Você já participa desta trilha.'
+        : dadosParticipacao.pending && !dadosParticipacao.message
+          ? 'Sua solicitação já está aguardando aprovação.'
+          : (dadosParticipacao.message || 'Solicitação enviada.'));
+      participacaoRolePendente = null;
+      document.getElementById('participarTrilhaRoleBox').style.display = 'none';
+    };
 
     document.getElementById('sairDoGrupo').onclick = async () => {
       if (!confirm('Tem certeza que deseja sair deste grupo?')) return;
