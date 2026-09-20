@@ -632,3 +632,92 @@ body { padding-bottom:96px; background:#07100b; }
   .card-arrow{right:10px;bottom:16px;width:36px;height:36px;font-size:28px}
   .bottom-nav{height:70px;padding:7px 15%;border-radius:24px}
 }
+
+
+/* =========================================================
+   SISTEMA VISUAL DOS MÓDULOS — DARK / OFF-ROAD
+   ========================================================= */
+:root{
+  --panel:#111713;
+  --panel-2:#171e19;
+  --panel-3:#1d261f;
+  --line:rgba(255,255,255,.11);
+  --muted:#a9b1ab;
+  --green:#69d337;
+  --green-dark:#315e25;
+  --danger:#d85a52;
+}
+.painel-modulo-embutido,
+.module-content{color:var(--text);}
+.painel-modulo-embutido>div,
+.module-content .offroad-panel{
+  background:linear-gradient(180deg,#151c17,#0e130f)!important;
+  color:var(--text)!important;
+  border:1px solid var(--line)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.28)!important;
+}
+.painel-modulo-embutido h2,.painel-modulo-embutido h3,
+.module-content h2,.module-content h3{color:#f5f7f5;}
+.painel-modulo-embutido p,.painel-modulo-embutido small{color:var(--muted);}
+.painel-modulo-embutido div[style*="border"],
+.module-content div[style*="border"]{
+  border-color:var(--line)!important;
+  background-color:rgba(255,255,255,.025)!important;
+}
+.painel-modulo-embutido input,
+.painel-modulo-embutido select,
+.painel-modulo-embutido textarea,
+.module-content input,.module-content select,.module-content textarea{
+  width:100%;
+  box-sizing:border-box;
+  border:1px solid var(--line)!important;
+  border-radius:11px!important;
+  background:#0b100d!important;
+  color:#f3f6f3!important;
+  outline:none;
+}
+.painel-modulo-embutido input:focus,
+.painel-modulo-embutido select:focus,
+.painel-modulo-embutido textarea:focus,
+.module-content input:focus,.module-content select:focus,.module-content textarea:focus{
+  border-color:var(--green)!important;
+  box-shadow:0 0 0 3px rgba(105,211,55,.12);
+}
+.painel-modulo-embutido input::placeholder,
+.painel-modulo-embutido textarea::placeholder,
+.module-content input::placeholder,.module-content textarea::placeholder{color:#788079;}
+.painel-modulo-embutido button,
+.module-content button{
+  border:1px solid var(--line)!important;
+  border-radius:10px!important;
+  background:#202821!important;
+  color:#f5f7f5!important;
+  font-weight:800;
+  cursor:pointer;
+  transition:.16s ease;
+}
+.painel-modulo-embutido button:hover,
+.module-content button:hover{border-color:rgba(105,211,55,.65)!important;background:#273429!important;}
+.painel-modulo-embutido button:disabled,
+.module-content button:disabled{opacity:.48;cursor:not-allowed;}
+.painel-modulo-embutido hr,.module-content hr{border-color:var(--line)!important;}
+.module-content a{color:#8ae35f;}
+.module-content .leaflet-container{color:#111;}
+.module-content .leaflet-container button{color:#111!important;background:#fff!important;}
+#mensagensGrupo{background:#0b100d!important;border-color:var(--line)!important;color:#eef2ee;}
+#participarTrilhaRoleBox{background:#121a14!important;}
+#listaMeusVeiculos>div{background:#141b16!important;}
+.module-content [style*="background:#fff"],
+.painel-modulo-embutido [style*="background:#fff"]{background:#151c17!important;color:#f5f7f5!important;}
+.module-content [style*="background:#e2e8f0"],
+.painel-modulo-embutido [style*="background:#e2e8f0"]{background:#252e27!important;color:#fff!important;}
+.module-content [style*="border:1px solid #ddd"],
+.painel-modulo-embutido [style*="border:1px solid #ddd"],
+.module-content [style*="border:1px solid #dbe3ea"],
+.painel-modulo-embutido [style*="border:1px solid #dbe3ea"]{border-color:var(--line)!important;}
+.module-content .status-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:#202a21;border:1px solid var(--line);font-size:12px;font-weight:800;}
+@media(max-width:600px){
+  .painel-modulo-embutido>div{padding:16px!important;border-radius:14px!important;}
+  .painel-modulo-embutido button,.module-content button{min-height:42px;}
+  .painel-modulo-embutido input,.painel-modulo-embutido select,.painel-modulo-embutido textarea{font-size:16px;}
+}
