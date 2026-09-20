@@ -882,6 +882,15 @@ async function abrirDetalhesGrupo(groupId) {
 
         <button id="sairDoGrupo" type="button" style="margin-top:12px;">🚪 Sair do grupo</button>
 
+        <h3 style="margin-top:22px;">💬 Conversa do grupo</h3>
+        <div id="mensagensGrupo" style="height:230px;overflow:auto;border:1px solid #ddd;border-radius:12px;padding:10px;background:#f7f7f7;">
+          Carregando conversa...
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input id="mensagemGrupoInput" maxlength="1000" placeholder="Escreva para a turma..." style="flex:1;padding:11px;">
+          <button id="enviarMensagemGrupo" type="button">Enviar</button>
+        </div>
+
         <h3 style="margin-top:22px;">🗓️ Próximos rolês</h3>
         <div>
           ${(grupo.outings || []).map((o) => `
@@ -947,6 +956,70 @@ async function abrirDetalhesGrupo(groupId) {
       overlay.remove();
       abrirGrupos();
     };
+
+    let chatGrupoTimer = null;
+
+    async function atualizarChatGrupo() {
+      const caixa = document.getElementById('mensagensGrupo');
+      if (!caixa || !document.body.contains(caixa)) {
+        if (chatGrupoTimer) clearInterval(chatGrupoTimer);
+        return;
+      }
+
+      try {
+        const respostaChat = await fetch(
+          '/api/grupos/' + encodeURIComponent(groupId) + '/mensagens',
+          { cache: 'no-store' }
+        );
+        const dadosChat = await respostaChat.json();
+        if (!respostaChat.ok) {
+          caixa.textContent = dadosChat.error || 'Não foi possível carregar a conversa.';
+          return;
+        }
+
+        caixa.innerHTML = (dadosChat.messages || []).map((m) =>
+          '<div style="margin-bottom:10px;"><strong>' +
+          escaparTextoTrilha(m.userName) + '</strong> <small>' +
+          new Date(m.createdAt).toLocaleString('pt-BR') + '</small><br>' +
+          escaparTextoTrilha(m.message) + '</div>'
+        ).join('') || '<p>A conversa ainda está vazia. Mande a primeira mensagem.</p>';
+        caixa.scrollTop = caixa.scrollHeight;
+      } catch (erro) {
+        console.warn('Chat do grupo indisponível:', erro);
+      }
+    }
+
+    document.getElementById('enviarMensagemGrupo').onclick = async () => {
+      const input = document.getElementById('mensagemGrupoInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const respostaMensagem = await fetch(
+        '/api/grupos/' + encodeURIComponent(groupId) + '/mensagens',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        }
+      );
+      const dadosMensagem = await respostaMensagem.json();
+      if (!respostaMensagem.ok) {
+        alert(dadosMensagem.error || 'Não foi possível enviar a mensagem.');
+        return;
+      }
+      input.value = '';
+      atualizarChatGrupo();
+    };
+
+    document.getElementById('mensagemGrupoInput').addEventListener('keydown', (evento) => {
+      if (evento.key === 'Enter' && !evento.shiftKey) {
+        evento.preventDefault();
+        document.getElementById('enviarMensagemGrupo').click();
+      }
+    });
+
+    atualizarChatGrupo();
+    chatGrupoTimer = setInterval(atualizarChatGrupo, 5000);
 
     document.getElementById('sairDoGrupo').onclick = async () => {
       if (!confirm('Tem certeza que deseja sair deste grupo?')) return;
