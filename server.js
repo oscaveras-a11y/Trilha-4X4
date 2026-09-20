@@ -2418,6 +2418,72 @@ app.get(
   }
 );
 
+app.get(
+  '/api/grupos/:id',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const membership = db.prepare(`
+      SELECT gm.role, g.name
+      FROM group_members gm
+      INNER JOIN groups g ON g.id = gm.group_id
+      WHERE gm.group_id = ? AND gm.user_id = ?
+    `).get(groupId, req.user.id);
+
+    if (!membership) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Você não participa deste grupo.',
+      });
+    }
+
+    const members = db.prepare(`
+      SELECT u.id, u.name, gm.role, gm.joined_at AS joinedAt
+      FROM group_members gm
+      INNER JOIN users u ON u.id = gm.user_id
+      WHERE gm.group_id = ?
+      ORDER BY CASE WHEN gm.role = 'admin' THEN 0 ELSE 1 END, u.name
+    `).all(groupId);
+
+    const trails = db.prepare(`
+      SELECT t.id, t.code, t.name, t.type, t.visibility,
+             t.start_at AS startAt, t.status
+      FROM group_trails gt
+      INNER JOIN trails t ON t.id = gt.trail_id
+      WHERE gt.group_id = ?
+      ORDER BY gt.added_at DESC
+    `).all(groupId);
+
+    const availableTrails = membership.role === 'admin'
+      ? db.prepare(`
+          SELECT t.id, t.code, t.name, t.start_at AS startAt
+          FROM trail_members tm
+          INNER JOIN trails t ON t.id = tm.trail_id
+          WHERE tm.user_id = ?
+            AND tm.role = 'admin'
+            AND tm.status = 'active'
+            AND NOT EXISTS (
+              SELECT 1 FROM group_trails gt
+              WHERE gt.group_id = ? AND gt.trail_id = t.id
+            )
+          ORDER BY t.created_at DESC
+        `).all(req.user.id, groupId)
+      : [];
+
+    return res.json({
+      ok: true,
+      group: {
+        id: groupId,
+        name: membership.name,
+        role: membership.role,
+        members,
+        trails,
+        availableTrails,
+      },
+    });
+  }
+);
+
 app.put(
   '/api/grupos/:id',
   exigirLogin,
