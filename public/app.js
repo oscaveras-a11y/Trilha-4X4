@@ -819,6 +819,13 @@ async function abrirDetalhesGrupo(groupId) {
           <button id="voltarListaGrupos" type="button">← Voltar</button>
         </div>
 
+        ${grupo.role === 'admin' ? `
+          <div style="margin:18px 0;padding:14px;border:1px solid #ddd;border-radius:12px;">
+            <strong>🔗 Convidar amigos</strong>
+            <p style="margin:8px 0;">${grupo.inviteCode ? 'Código atual: <b>' + escaparTextoTrilha(grupo.inviteCode) + '</b>' : 'Gere um código privado para seus amigos entrarem.'}</p>
+            <button id="gerarConviteGrupo" type="button">${grupo.inviteCode ? 'Gerar novo código' : 'Gerar código de convite'}</button>
+          </div>
+        ` : ''}
         <h3>👥 Participantes</h3>
         <div>
           ${(grupo.members || []).map((m) =>
@@ -871,6 +878,24 @@ async function abrirDetalhesGrupo(groupId) {
     `;
 
     if (!anexarPainelAoModulo(overlay)) document.body.appendChild(overlay);
+
+    const gerarConvite = document.getElementById('gerarConviteGrupo');
+    if (gerarConvite) {
+      gerarConvite.onclick = async () => {
+        const respostaConvite = await fetch(
+          '/api/grupos/' + encodeURIComponent(groupId) + '/convite',
+          { method: 'POST' }
+        );
+        const dadosConvite = await respostaConvite.json();
+        if (!respostaConvite.ok) {
+          alert(dadosConvite.error || 'Não foi possível gerar o convite.');
+          return;
+        }
+        alert('Código do grupo: ' + dadosConvite.code);
+        overlay.remove();
+        abrirDetalhesGrupo(groupId);
+      };
+    }
 
     document.getElementById('voltarListaGrupos').onclick = () => {
       overlay.remove();
@@ -974,6 +999,11 @@ async function abrirGrupos() {
             </div>
           `).join('') : '<p>Você ainda não participa de grupos.</p>'}
         </div>
+        <h3>Entrar em um grupo</h3>
+        <div style="display:flex;gap:8px;margin-bottom:22px;">
+          <input id="codigoConviteGrupo" placeholder="Código G4X4-..." style="flex:1;padding:11px;text-transform:uppercase;">
+          <button id="entrarGrupoCodigo" type="button" style="padding:11px 14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;">Entrar</button>
+        </div>
         <h3>Criar grupo</h3>
         <div style="display:flex;gap:8px;">
           <input id="nomeNovoGrupo" placeholder="Nome do grupo" style="flex:1;padding:11px;">
@@ -986,6 +1016,25 @@ async function abrirGrupos() {
     document.body.appendChild(overlay);
   }
     document.getElementById('fecharGrupos').addEventListener('click', () => overlay.remove());
+    document.getElementById('entrarGrupoCodigo').addEventListener('click', async () => {
+      const code = document.getElementById('codigoConviteGrupo').value.trim().toUpperCase();
+      if (!code) {
+        alert('Informe o código de convite.');
+        return;
+      }
+      const entrar = await fetch('/api/grupos/entrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      const resultado = await entrar.json();
+      if (!entrar.ok) {
+        alert(resultado.error || 'Não foi possível entrar no grupo.');
+        return;
+      }
+      overlay.remove();
+      abrirDetalhesGrupo(resultado.group.id);
+    });
     document.getElementById('criarNovoGrupo').addEventListener('click', async () => {
       const name = document.getElementById('nomeNovoGrupo').value.trim();
       if (!name) {
