@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   verificarUsuarioLogado();
+  atualizarNotificacoes();
+  setInterval(atualizarNotificacoes, 60000);
 });
 
 async function verificarUsuarioLogado() {
@@ -151,23 +153,69 @@ function criarAvatarUsuario(user) {
   });
 }
 
-function mostrarNotificacoes() {
+let notificacoesAtuais = [];
+
+async function atualizarNotificacoes() {
+  const dot = document.getElementById('notificationDot');
+  try {
+    const resposta = await fetch('/api/notificacoes', { cache: 'no-store' });
+    if (resposta.status === 401) {
+      notificacoesAtuais = [];
+      if (dot) dot.hidden = true;
+      return;
+    }
+    const dados = await resposta.json();
+    notificacoesAtuais = dados.ok && Array.isArray(dados.notifications) ? dados.notifications : [];
+    if (dot) dot.hidden = notificacoesAtuais.length === 0;
+    const painel = document.getElementById('painelNotificacoes');
+    if (painel) renderizarNotificacoes(painel);
+  } catch (erro) {
+    console.warn('Não foi possível atualizar notificações:', erro);
+  }
+}
+
+function renderizarNotificacoes(painel) {
+  const itens = notificacoesAtuais.length
+    ? notificacoesAtuais.map((n, i) => `
+      <button type="button" class="notification-item" data-notification-index="${i}">
+        <span class="notification-item-icon">${n.icon || '🔔'}</span>
+        <span><strong>${escaparHtml(n.title || 'Notificação')}</strong><small>${escaparHtml(n.message || '')}</small></span>
+        <span class="notification-chevron">›</span>
+      </button>`).join('')
+    : '<div class="notification-empty">Nenhuma nova notificação no momento.</div>';
+
+  painel.innerHTML = `
+    <div class="floating-panel-title"><strong>🔔 Notificações</strong><button type="button" class="notification-close" aria-label="Fechar">×</button></div>
+    <div class="notification-list">${itens}</div>
+  `;
+  painel.querySelector('.notification-close')?.addEventListener('click', () => painel.remove());
+  painel.querySelectorAll('[data-notification-index]').forEach((botao) => {
+    botao.addEventListener('click', () => {
+      const n = notificacoesAtuais[Number(botao.dataset.notificationIndex)];
+      painel.remove();
+      if (!n?.action) return;
+      if (n.action.href) {
+        window.location.href = n.action.href;
+        return;
+      }
+      if (n.action.page) navegarParaModulo(n.action.page);
+    });
+  });
+}
+
+async function mostrarNotificacoes() {
   const existente = document.getElementById('painelNotificacoes');
   if (existente) {
     existente.remove();
     return;
   }
-
   const painel = document.createElement('div');
   painel.id = 'painelNotificacoes';
   painel.className = 'floating-top-panel notification-panel';
-  painel.innerHTML = `
-    <div class="floating-panel-title"><strong>🔔 Notificações</strong><button type="button" aria-label="Fechar">×</button></div>
-    <p>As atualizações importantes do Trilha 4X4 aparecerão aqui.</p>
-    <div class="notification-empty">Nenhuma nova notificação no momento.</div>
-  `;
+  painel.innerHTML = '<div class="notification-empty">Carregando notificações...</div>';
   document.body.appendChild(painel);
-  painel.querySelector('button')?.addEventListener('click', () => painel.remove());
+  await atualizarNotificacoes();
+  renderizarNotificacoes(painel);
 }
 
 function mostrarMenuUsuario(user) {
