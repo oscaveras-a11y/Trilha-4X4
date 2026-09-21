@@ -8,7 +8,7 @@
 
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"
   >
 
   <style>
@@ -95,8 +95,8 @@
     }
 
     #mapa {
-      height: min(62vh, 620px);
-      min-height: 420px;
+      height: min(72vh, 760px);
+      min-height: 520px;
       border-radius: 16px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.12);
@@ -128,6 +128,10 @@
       color:#a9b1ab;
     }
 
+    .maplibregl-ctrl-group { background:#172019; }
+    .maplibregl-ctrl-group button { filter:invert(1); }
+    .meu-veiculo-mapa { width:28px;height:28px;border-radius:50%;background:#22c55e;border:4px solid #fff;box-shadow:0 0 0 6px rgba(34,197,94,.22),0 3px 12px rgba(0,0,0,.55); }
+    .participante-mapa { width:22px;height:22px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 2px 9px rgba(0,0,0,.5); }
     .rota-numero {
       width:28px;
       height:28px;
@@ -496,9 +500,7 @@
 </main>
 
 
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-></script>
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
 
 <script>
@@ -532,6 +534,8 @@
   let gravandoRotaGps = false;
   let rotaGpsPausada = false;
   let watchRotaGpsId = null;
+  let mapaCarregado = false;
+  const trilhasGeoJson = new Map();
 
 
   /*
@@ -820,222 +824,176 @@
    */
 
   function iniciarMapa() {
-    mapa = L.map('mapa', {
-      zoomControl: true,
-      preferCanvas: true,
-    }).setView([-14.2350, -51.9253], 4);
+    mapa = new maplibregl.Map({
+      container: 'mapa',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [-51.9253, -14.2350],
+      zoom: 3.5,
+      pitch: 0,
+      bearing: 0,
+      attributionControl: true,
+    });
 
-    const mapaPadrao = L.tileLayer(
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }
-    );
+    mapa.addControl(new maplibregl.NavigationControl({
+      visualizePitch: true,
+      showCompass: true,
+      showZoom: true,
+    }), 'top-right');
+    mapa.addControl(new maplibregl.ScaleControl({
+      maxWidth: 120,
+      unit: 'metric',
+    }), 'bottom-left');
 
-    const mapaTopografico = L.tileLayer(
-      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-      {
-        maxZoom: 17,
-        attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap'
-      }
-    );
+    mapa.on('load', () => {
+      mapaCarregado = true;
+      desenharRotaPlanejada();
+    });
 
-    mapaPadrao.addTo(mapa);
-
-    L.control.layers({
-      'Mapa': mapaPadrao,
-      'Topográfico': mapaTopografico,
-    }, null, {
-      position: 'topright',
-      collapsed: true,
-    }).addTo(mapa);
-
-    L.control.scale({
-      imperial: false,
-      position: 'bottomleft',
-    }).addTo(mapa);
+    mapa.on('click', adicionarPontoPlanejadoNoMapa);
 
     document.getElementById('verRotaButton').onclick = centralizarRotaPlanejada;
     document.getElementById('verTodosButton').onclick = enquadrarTudoNoMapa;
     document.getElementById('telaCheiaMapaButton').onclick = alternarMapaMaior;
 
-    setTimeout(() => mapa.invalidateSize(), 100);
+    setTimeout(() => mapa.resize(), 100);
   }
 
   function centralizarRotaPlanejada() {
-    if (!rotaPlanejadaLinha || rotaPlanejadaPontos.length < 2) {
+    if (rotaPlanejadaPontos.length < 2) {
       alert('Ainda não há uma rota planejada para mostrar.');
       return;
     }
-
-    mapa.fitBounds(rotaPlanejadaLinha.getBounds(), {
-      padding: [35, 35],
-      maxZoom: 16,
-    });
+    const bounds = new maplibregl.LngLatBounds();
+    rotaPlanejadaPontos.forEach(p => bounds.extend([p.longitude, p.latitude]));
+    mapa.fitBounds(bounds, { padding: 45, maxZoom: 16, duration: 700 });
   }
 
   function enquadrarTudoNoMapa() {
-    const pontos = [];
-
-    rotaPlanejadaPontos.forEach((ponto) => {
-      pontos.push([ponto.latitude, ponto.longitude]);
+    const pontos = rotaPlanejadaPontos.map(p => [p.longitude, p.latitude]);
+    marcadoresParticipantes.forEach(m => {
+      const p = m.getLngLat();
+      pontos.push([p.lng, p.lat]);
     });
-
-    marcadoresParticipantes.forEach((marcador) => {
-      pontos.push(marcador.getLatLng());
-    });
-
     if (marcadorUsuario) {
-      pontos.push(marcadorUsuario.getLatLng());
+      const p = marcadorUsuario.getLngLat();
+      pontos.push([p.lng, p.lat]);
     }
-
-    if (pontos.length === 0) {
+    if (!pontos.length) {
       alert('Ainda não há posições para enquadrar.');
       return;
     }
-
     if (pontos.length === 1) {
-      mapa.setView(pontos[0], 16);
+      mapa.easeTo({ center: pontos[0], zoom: 16 });
       return;
     }
-
-    mapa.fitBounds(L.latLngBounds(pontos), {
-      padding: [35, 35],
-      maxZoom: 16,
-    });
+    const bounds = new maplibregl.LngLatBounds();
+    pontos.forEach(p => bounds.extend(p));
+    mapa.fitBounds(bounds, { padding: 45, maxZoom: 16, duration: 700 });
   }
 
   function alternarMapaMaior() {
     const elemento = document.getElementById('mapa');
     const ampliado = elemento.dataset.ampliado === '1';
-
     elemento.dataset.ampliado = ampliado ? '0' : '1';
     elemento.style.height = ampliado ? '' : '78vh';
-
     document.getElementById('telaCheiaMapaButton').textContent =
       ampliado ? '⛶ MAPA MAIOR' : '↙ MAPA NORMAL';
-
-    setTimeout(() => mapa.invalidateSize(), 50);
+    setTimeout(() => mapa.resize(), 50);
   }
 
 
   function desenharRotaPlanejada() {
-    marcadoresRotaPlanejada.forEach((marcador) => marcador.remove());
+    marcadoresRotaPlanejada.forEach(m => m.remove());
     marcadoresRotaPlanejada = [];
+    if (!mapa || !mapaCarregado) return;
 
-    if (rotaPlanejadaLinha) {
-      rotaPlanejadaLinha.remove();
-      rotaPlanejadaLinha = null;
-    }
+    const sourceId = 'rota-planejada';
+    const layerId = 'rota-planejada-linha';
+    if (mapa.getLayer(layerId)) mapa.removeLayer(layerId);
+    if (mapa.getSource(sourceId)) mapa.removeSource(sourceId);
+    rotaPlanejadaLinha = null;
 
-    if (!mapa || rotaPlanejadaPontos.length === 0) {
-      return;
-    }
+    if (!rotaPlanejadaPontos.length) return;
 
-    const latLngs = rotaPlanejadaPontos.map((ponto) => [
-      ponto.latitude,
-      ponto.longitude,
-    ]);
-
-    rotaPlanejadaLinha = L.polyline(latLngs, {
-      color: '#111827',
-      weight: 6,
-      opacity: 0.9,
-      lineJoin: 'round',
-    }).addTo(mapa);
-
-    if (editandoRota && latLngs.length >= 2) {
-      rotaPlanejadaLinha.on('click', (evento) => {
-        if (evento.originalEvent) {
-          L.DomEvent.stopPropagation(evento.originalEvent);
-        }
-
-        let melhorIndice = 1;
-        let menorDistancia = Infinity;
-        const pontoClique = mapa.latLngToLayerPoint(evento.latlng);
-
-        for (let i = 0; i < latLngs.length - 1; i += 1) {
-          const a = mapa.latLngToLayerPoint(L.latLng(latLngs[i]));
-          const b = mapa.latLngToLayerPoint(L.latLng(latLngs[i + 1]));
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const comprimento2 = dx * dx + dy * dy;
-          let t = comprimento2 ? ((pontoClique.x - a.x) * dx + (pontoClique.y - a.y) * dy) / comprimento2 : 0;
-          t = Math.max(0, Math.min(1, t));
-          const px = a.x + t * dx;
-          const py = a.y + t * dy;
-          const distancia = Math.hypot(pontoClique.x - px, pontoClique.y - py);
-
-          if (distancia < menorDistancia) {
-            menorDistancia = distancia;
-            melhorIndice = i + 1;
-          }
-        }
-
-        rotaPlanejadaPontos.splice(melhorIndice, 0, {
-          latitude: evento.latlng.lat,
-          longitude: evento.latlng.lng,
-        });
-        desenharRotaPlanejada();
+    const coordenadas = rotaPlanejadaPontos.map(p => [p.longitude, p.latitude]);
+    if (coordenadas.length >= 2) {
+      mapa.addSource(sourceId, {
+        type: 'geojson',
+        data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coordenadas } }
       });
+      mapa.addLayer({
+        id: layerId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#ff7a00',
+          'line-width': 7,
+          'line-opacity': 0.95,
+        },
+        layout: { 'line-join': 'round', 'line-cap': 'round' }
+      });
+      rotaPlanejadaLinha = { sourceId, layerId };
+
+      if (editandoRota) {
+        mapa.on('click', layerId, inserirPontoNaLinhaPlanejada);
+        mapa.on('mouseenter', layerId, () => { mapa.getCanvas().style.cursor = 'crosshair'; });
+        mapa.on('mouseleave', layerId, () => { mapa.getCanvas().style.cursor = ''; });
+      }
     }
 
     rotaPlanejadaPontos.forEach((ponto, index) => {
-      const titulo = index === 0
-        ? '🚩 Saída'
-        : index === rotaPlanejadaPontos.length - 1
-          ? '🏁 Chegada'
-          : `📍 Ponto ${index + 1}`;
+      const el = document.createElement('div');
+      el.className = 'rota-numero';
+      el.textContent = String(index + 1);
+      const titulo = index === 0 ? '🚩 Saída'
+        : index === rotaPlanejadaPontos.length - 1 ? '🏁 Chegada'
+        : '📍 Ponto ' + (index + 1);
 
-      const icone = L.divIcon({
-        className: '',
-        html: `<div class="rota-numero">${index + 1}</div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      });
-
-      const marcador = L.marker([
-        ponto.latitude,
-        ponto.longitude,
-      ], {
-        icon: icone,
-        draggable: editandoRota,
-      })
-        .addTo(mapa)
-        .bindPopup(titulo);
+      const marcador = new maplibregl.Marker({ element: el, draggable: editandoRota })
+        .setLngLat([ponto.longitude, ponto.latitude])
+        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(titulo))
+        .addTo(mapa);
 
       if (editandoRota) {
-        marcador.on('dragend', (evento) => {
-          const posicao = evento.target.getLatLng();
-          rotaPlanejadaPontos[index].latitude = posicao.lat;
-          rotaPlanejadaPontos[index].longitude = posicao.lng;
+        marcador.on('dragend', () => {
+          const pos = marcador.getLngLat();
+          rotaPlanejadaPontos[index] = { latitude: pos.lat, longitude: pos.lng };
           desenharRotaPlanejada();
         });
-
-        marcador.on('click', (evento) => {
-          if (evento.originalEvent) {
-            L.DomEvent.stopPropagation(evento.originalEvent);
+        el.addEventListener('dblclick', (evento) => {
+          evento.stopPropagation();
+          if (confirm('Excluir o ponto ' + (index + 1) + ' da rota?')) {
+            rotaPlanejadaPontos.splice(index, 1);
+            desenharRotaPlanejada();
           }
-
-          if (!confirm('Excluir o ponto ' + (index + 1) + ' da rota?')) {
-            return;
-          }
-
-          rotaPlanejadaPontos.splice(index, 1);
-          desenharRotaPlanejada();
         });
       }
-
       marcadoresRotaPlanejada.push(marcador);
     });
 
-    if (latLngs.length >= 2) {
-      mapa.fitBounds(rotaPlanejadaLinha.getBounds(), {
-        padding: [35, 35],
-        maxZoom: 16,
-      });
+    if (coordenadas.length >= 2 && !editandoRota) centralizarRotaPlanejada();
+  }
+
+  function inserirPontoNaLinhaPlanejada(evento) {
+    if (!editandoRota || !evento?.lngLat || rotaPlanejadaPontos.length < 2) return;
+    evento.originalEvent?.stopPropagation();
+    const clique = mapa.project(evento.lngLat);
+    let melhorIndice = 1;
+    let menor = Infinity;
+    for (let i = 0; i < rotaPlanejadaPontos.length - 1; i++) {
+      const a0 = rotaPlanejadaPontos[i], b0 = rotaPlanejadaPontos[i + 1];
+      const a = mapa.project([a0.longitude, a0.latitude]);
+      const b = mapa.project([b0.longitude, b0.latitude]);
+      const dx=b.x-a.x, dy=b.y-a.y, l2=dx*dx+dy*dy;
+      let t=l2?((clique.x-a.x)*dx+(clique.y-a.y)*dy)/l2:0;
+      t=Math.max(0,Math.min(1,t));
+      const d=Math.hypot(clique.x-(a.x+t*dx), clique.y-(a.y+t*dy));
+      if(d<menor){menor=d;melhorIndice=i+1;}
     }
+    rotaPlanejadaPontos.splice(melhorIndice,0,{
+      latitude:evento.lngLat.lat, longitude:evento.lngLat.lng
+    });
+    desenharRotaPlanejada();
   }
 
   async function carregarRotaPlanejada() {
@@ -1152,10 +1110,7 @@
         atualizarBotoesGravacaoRota();
 
         registrarPontoRotaGps(position);
-        mapa.setView(
-          [position.coords.latitude, position.coords.longitude],
-          17
-        );
+        mapa.easeTo({ center: [position.coords.longitude, position.coords.latitude], zoom: 17 });
 
         if (watchRotaGpsId !== null) {
           navigator.geolocation.clearWatch(watchRotaGpsId);
@@ -1332,15 +1287,15 @@
   }
 
   function adicionarPontoPlanejadoNoMapa(evento) {
-    if (!editandoRota || !trilha || trilha.role !== 'admin') {
+    if (!editandoRota || !trilha || trilha.role !== 'admin' || !evento?.lngLat) return;
+    if (rotaPlanejadaPontos.length >= 500) {
+      alert('A rota atingiu o limite de 500 pontos.');
       return;
     }
-
     rotaPlanejadaPontos.push({
-      latitude: evento.latlng.lat,
-      longitude: evento.latlng.lng,
+      latitude: evento.lngLat.lat,
+      longitude: evento.lngLat.lng,
     });
-
     desenharRotaPlanejada();
   }
 
@@ -1631,28 +1586,29 @@
 
 
   function adicionarPontoRota(localizacao) {
-    if (!mapa || !localizacao || !localizacao.userId) {
-      return;
+    if (!mapa || !mapaCarregado || !localizacao || !localizacao.userId) return;
+    let coordenadas = trilhasGeoJson.get(localizacao.userId) || [];
+    coordenadas.push([localizacao.longitude, localizacao.latitude]);
+    if (coordenadas.length > 500) coordenadas = coordenadas.slice(-500);
+    trilhasGeoJson.set(localizacao.userId, coordenadas);
+
+    const sourceId = 'trajeto-' + localizacao.userId;
+    const layerId = 'trajeto-linha-' + localizacao.userId;
+    const data = { type:'Feature', geometry:{ type:'LineString', coordinates:coordenadas } };
+    const source = mapa.getSource(sourceId);
+    if (source) {
+      source.setData(data);
+    } else {
+      mapa.addSource(sourceId, { type:'geojson', data });
+      mapa.addLayer({
+        id:layerId, type:'line', source:sourceId,
+        paint:{
+          'line-color': localizacao.userId === trilha?.creatorId ? '#dc2626' : '#2563eb',
+          'line-width':4, 'line-opacity':0.75
+        }
+      });
     }
-
-    let rota = rotasParticipantes.get(localizacao.userId);
-
-    if (!rota) {
-      rota = L.polyline([], {
-        color: localizacao.userId === trilha?.creatorId
-          ? '#dc2626'
-          : '#2563eb',
-        weight: 4,
-        opacity: 0.75,
-      }).addTo(mapa);
-
-      rotasParticipantes.set(localizacao.userId, rota);
-    }
-
-    rota.addLatLng([
-      localizacao.latitude,
-      localizacao.longitude,
-    ]);
+    rotasParticipantes.set(localizacao.userId, { sourceId, layerId });
   }
 
 
@@ -1850,13 +1806,7 @@
           mapa
         ) {
 
-          mapa.setView(
-            [
-              position.coords.latitude,
-              position.coords.longitude
-            ],
-            16
-          );
+          mapa.easeTo({ center: [position.coords.longitude, position.coords.latitude], zoom: 16 });
 
         }
 
@@ -1890,80 +1840,37 @@
    * ATUALIZAR MINHA POSIÇÃO
    */
 
-  function atualizarMapaUsuario(
-    position
-  ) {
-
-    if (!mapa) {
-      return;
-    }
-
-
-    const latitude =
-      position.coords.latitude;
-
-    const longitude =
-      position.coords.longitude;
-
-    const precisao =
-      position.coords.accuracy;
-
+  function atualizarMapaUsuario(position) {
+    if (!mapa) return;
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    const precisao = position.coords.accuracy;
 
     if (!marcadorUsuario) {
-
-      marcadorUsuario =
-        L.marker(
-          [
-            latitude,
-            longitude
-          ]
-        )
-        .addTo(mapa)
-        .bindPopup(
-          '📍 Você está aqui'
-        );
-
-    } else {
-
-      marcadorUsuario.setLatLng(
-        [
-          latitude,
-          longitude
-        ]
-      );
-
-    }
-
-
-    if (!precisaoUsuario) {
-
-      precisaoUsuario =
-        L.circle(
-          [
-            latitude,
-            longitude
-          ],
-          {
-            radius: precisao
-          }
-        )
+      const el = document.createElement('div');
+      el.className = 'meu-veiculo-mapa';
+      marcadorUsuario = new maplibregl.Marker({ element: el })
+        .setLngLat([longitude, latitude])
+        .setPopup(new maplibregl.Popup({ offset: 22 }).setText('📍 Você está aqui'))
         .addTo(mapa);
-
     } else {
-
-      precisaoUsuario.setLatLng(
-        [
-          latitude,
-          longitude
-        ]
-      );
-
-      precisaoUsuario.setRadius(
-        precisao
-      );
-
+      marcadorUsuario.setLngLat([longitude, latitude]);
     }
 
+    if (mapaCarregado) {
+      const sourceId='precisao-usuario', layerId='precisao-usuario-circulo';
+      const data={type:'Feature',properties:{},geometry:{type:'Point',coordinates:[longitude,latitude]}};
+      const src=mapa.getSource(sourceId);
+      if(src) src.setData(data);
+      else {
+        mapa.addSource(sourceId,{type:'geojson',data});
+        mapa.addLayer({id:layerId,type:'circle',source:sourceId,paint:{
+          'circle-radius': Math.max(8, Math.min(45, precisao / 2)),
+          'circle-color':'#22c55e','circle-opacity':0.12,
+          'circle-stroke-color':'#22c55e','circle-stroke-opacity':0.45,'circle-stroke-width':2
+        }});
+      }
+    }
   }
 
 
@@ -2136,62 +2043,21 @@
    * MOSTRAR PARTICIPANTE NO MAPA
    */
 
-  function mostrarParticipanteMapa(
-    localizacao
-  ) {
-
-    if (
-      !mapa ||
-      !localizacao ||
-      !localizacao.userId
-    ) {
-
-      return;
-    }
-
+  function mostrarParticipanteMapa(localizacao) {
+    if (!mapa || !localizacao || !localizacao.userId) return;
     adicionarPontoRota(localizacao);
-
-
-    let marcador =
-      marcadoresParticipantes.get(
-        localizacao.userId
-      );
-
-
+    let marcador = marcadoresParticipantes.get(localizacao.userId);
     if (!marcador) {
-
-      marcador =
-        L.marker(
-          [
-            localizacao.latitude,
-            localizacao.longitude
-          ]
-        )
-        .addTo(mapa)
-        .bindPopup(
-          '👤 ' +
-          escaparHTML(
-            localizacao.name
-          )
-        );
-
-
-      marcadoresParticipantes.set(
-        localizacao.userId,
-        marcador
-      );
-
+      const el=document.createElement('div');
+      el.className='participante-mapa';
+      marcador=new maplibregl.Marker({element:el})
+        .setLngLat([localizacao.longitude,localizacao.latitude])
+        .setPopup(new maplibregl.Popup({offset:18}).setText('👤 '+(localizacao.name||'Participante')))
+        .addTo(mapa);
+      marcadoresParticipantes.set(localizacao.userId,marcador);
     } else {
-
-      marcador.setLatLng(
-        [
-          localizacao.latitude,
-          localizacao.longitude
-        ]
-      );
-
+      marcador.setLngLat([localizacao.longitude,localizacao.latitude]);
     }
-
   }
 
 
