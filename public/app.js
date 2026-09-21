@@ -597,7 +597,11 @@ function abrirIA() {
   fechar.style.color = '#fff';
   fechar.style.cursor = 'pointer';
   fechar.style.fontSize = '18px';
-  fechar.addEventListener('click', () => overlay.remove());
+  fechar.addEventListener('click', () => {
+    overlay.remove();
+    history.pushState({}, '', '/');
+    mostrarHome();
+  });
 
   topo.appendChild(titulo);
   topo.appendChild(fechar);
@@ -831,7 +835,11 @@ async function abrirMeu4x4() {
     if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
   }
-    document.getElementById('fecharMeu4x4').addEventListener('click', () => overlay.remove());
+    document.getElementById('fecharMeu4x4').addEventListener('click', () => {
+      overlay.remove();
+      history.pushState({}, '', '/');
+      mostrarHome();
+    });
     document.getElementById('salvarMeuVeiculo').addEventListener('click', async () => {
       const vehicle = {
         type: document.getElementById('meuVeiculoTipo').value.trim(),
@@ -1486,7 +1494,11 @@ async function abrirGrupos() {
     if (!anexarPainelAoModulo(overlay)) {
     document.body.appendChild(overlay);
   }
-    document.getElementById('fecharGrupos').addEventListener('click', () => overlay.remove());
+    document.getElementById('fecharGrupos').addEventListener('click', () => {
+      overlay.remove();
+      history.pushState({}, '', '/');
+      mostrarHome();
+    });
     document.getElementById('entrarGrupoCodigo').addEventListener('click', async () => {
       const code = document.getElementById('codigoConviteGrupo').value.trim().toUpperCase();
       if (!code) {
