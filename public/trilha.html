@@ -103,22 +103,6 @@
       background: #172019;
     }
 
-    .mapa-toolbar {
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin:12px 0;
-    }
-
-    .mapa-toolbar button {
-      border:1px solid rgba(255,255,255,.12);
-      background:#202821;
-      border-radius:10px;
-      padding:10px 12px;
-      font-weight:bold;
-      cursor:pointer;
-    }
-
     .rota-livre-aviso {
       display:block;
       margin-top:10px;
@@ -168,13 +152,79 @@
     }
 
     .botao {
-      border: 0;
-      border-radius: 12px;
-      padding: 15px;
-      font-size: 15px;
-      font-weight: bold;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      padding: 16px 18px;
+      min-height: 58px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .01em;
       cursor: pointer;
+      color:#f4f7f5;
+      background:linear-gradient(145deg,#22313a,#142027);
+      box-shadow:inset 0 1px rgba(255,255,255,.06),0 8px 18px rgba(0,0,0,.18);
+      transition:transform .15s ease,border-color .15s ease,filter .15s ease;
     }
+    .botao:active,.mapa-toolbar button:active{transform:scale(.98)}
+    .botao:focus-visible,.mapa-toolbar button:focus-visible{outline:2px solid #69d337;outline-offset:2px}
+    #criarRotaMapaButton,#modoTrilhaButton,#salvarRotaButton,#chegueiButton{
+      background:linear-gradient(145deg,#10a34a,#087b36);
+      border-color:#35df78;
+    }
+    #editarRotaButton{
+      background:linear-gradient(145deg,#ffb13b,#ff8515);
+      color:#16110a;
+      border-color:#ffc66c;
+    }
+    #sosButton{background:linear-gradient(145deg,#dc2626,#991b1b);border-color:#ef6666}
+    #limparRotaButton,#excluirOfflineButton{border-color:rgba(239,68,68,.42)}
+    #rotaProximoPasso{
+      background:linear-gradient(145deg,#172229,#0e171c)!important;
+      border:1px solid rgba(255,255,255,.13)!important;
+      border-radius:20px!important;
+      padding:20px!important;
+      box-shadow:0 12px 28px rgba(0,0,0,.22);
+    }
+    #editorRota{
+      background:linear-gradient(145deg,#162129,#0d151a);
+      border:1px solid rgba(255,255,255,.11);
+      border-radius:20px;
+      padding:18px!important;
+    }
+    #editorRota>p{color:#c9d1cc;line-height:1.55}
+    #editorRota>p>strong{color:#fff;font-size:17px}
+    .mapa-toolbar{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin:14px 0;
+    }
+    .mapa-toolbar button{
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(145deg,#202d35,#111b21);
+      color:#f3f6f3;
+      border-radius:16px;
+      min-height:54px;
+      padding:11px 10px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:inset 0 1px rgba(255,255,255,.05),0 7px 16px rgba(0,0,0,.18);
+    }
+    #baixarOfflineButton{border-color:rgba(105,211,55,.38)}
+    #offlineStatus{border:1px solid rgba(105,211,55,.18);background:linear-gradient(145deg,#15251d,#101a15)}
+    .rota-livre-aviso{
+      background:linear-gradient(145deg,#0d2b1d,#0b1d15);
+      border-color:rgba(61,220,116,.38);
+      color:#75ed9e;
+      font-weight:650;
+    }
+    .informacoes .info{
+      border:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(145deg,#142018,#0c1310);
+      min-height:58px;
+    }
+    #adminTrilhaAcoes .botao{background:linear-gradient(145deg,#22313a,#142027)}
+
 
     #modoTrilhaButton {
       background: #166534;
@@ -241,9 +291,13 @@
         min-height: 360px;
       }
 
-      .card {
-        padding: 14px;
-      }
+      .card { padding: 14px; border-radius:18px; }
+      .botoes { grid-template-columns:1fr 1fr; gap:10px; }
+      .botao { min-height:62px; padding:14px 12px; }
+      .mapa-toolbar { grid-template-columns:1fr 1fr; }
+      .mapa-toolbar button { min-height:58px; }
+      #sosButton { grid-column:1 / -1; }
+      .informacoes { grid-template-columns:1fr 1fr; gap:9px; }
     }
   </style>
 </head>
