@@ -119,6 +119,17 @@
       cursor:pointer;
     }
 
+    .rota-livre-aviso {
+      display:block;
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#17231a;
+      border:1px solid rgba(105,211,55,.28);
+      color:#b8ef9e;
+      line-height:1.45;
+    }
+
     .mapa-legenda {
       display:flex;
       flex-wrap:wrap;
@@ -452,11 +463,12 @@
 
     <div id="editorRota" style="display:none;margin:12px 0;">
       <p style="margin-top:0;">
-        <strong>Editor de rota:</strong> toque/clique no mapa para adicionar pontos.
-        Arraste para mover, toque em um ponto para excluir e toque na linha entre dois pontos para inserir um novo ponto.
+        <strong>Editor de rota livre:</strong> toque/clique em qualquer lugar do mapa para adicionar pontos.
+        A rota não precisa seguir ruas ou estradas cadastradas. Arraste para mover, dê dois toques/cliques em um ponto para excluir e toque na linha entre dois pontos para inserir um novo ponto.
+        <span class="rota-livre-aviso">🏕️ MODO OFF-ROAD: o caminho é salvo pelas coordenadas escolhidas ou registradas pelo GPS, mesmo onde o mapa não mostra estrada.</span>
       </p>
       <div class="botoes">
-        <button class="botao" id="editarRotaButton">✏️ CRIAR / EDITAR ROTA</button>
+        <button class="botao" id="editarRotaButton">✏️ CRIAR ROTA LIVRE</button>
         <button class="botao" id="gravarRotaGpsButton">📡 GRAVAR ROTA COM GPS</button>
         <button class="botao" id="pausarRotaGpsButton" style="display:none;">⏸ PAUSAR GRAVAÇÃO</button>
         <button class="botao" id="finalizarRotaGpsButton" style="display:none;">🏁 FINALIZAR GRAVAÇÃO</button>
@@ -475,7 +487,7 @@
     <div id="mapa"></div>
 
     <div class="mapa-legenda">
-      <span>🛣️ linha escura: rota planejada</span>
+      <span>🟠 linha laranja: rota livre planejada</span>
       <span>📍 marcadores: pontos da rota</span>
       <span>👤 participantes: localização ao vivo</span>
     </div>
