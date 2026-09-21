@@ -953,3 +953,14 @@ body.safety-page .reason-button:hover,body.safety-page .reason-button.selected{b
 .floating-panel-title button{border:0;background:transparent;color:#fff;font-size:27px;cursor:pointer;}
 .floating-top-panel p{color:#aeb7b0;font-size:14px;}
 .notification-empty{padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#111a13;color:#aeb7b0;}
+
+.notification-list{display:grid;gap:8px;margin-top:12px;max-height:min(62vh,520px);overflow:auto;}
+.notification-item{
+ width:100%;display:grid;grid-template-columns:38px 1fr 22px;gap:10px;align-items:center;text-align:left;
+ padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:13px;background:#111a13;color:#fff;cursor:pointer;
+}
+.notification-item:hover{border-color:#69d337;background:#17251a;}
+.notification-item-icon{font-size:24px;}
+.notification-item strong{display:block;font-size:14px;margin-bottom:3px;}
+.notification-item small{display:block;color:#adb6af;line-height:1.3;}
+.notification-chevron{font-size:27px;color:#69d337;}
