@@ -482,6 +482,11 @@
       <button type="button" id="verRotaButton">🛣️ VER ROTA</button>
       <button type="button" id="verTodosButton">👥 VER TODOS</button>
       <button type="button" id="telaCheiaMapaButton">⛶ MAPA MAIOR</button>
+      <button type="button" id="baixarOfflineButton">⬇️ BAIXAR PERCURSO OFFLINE</button>
+      <button type="button" id="excluirOfflineButton" style="display:none;">🗑 EXCLUIR OFFLINE</button>
+    </div>
+    <div id="offlineStatus" class="status" style="margin-bottom:12px;">
+      📱 Percurso ainda não salvo neste dispositivo.
     </div>
 
     <div id="mapa"></div>
@@ -835,6 +840,108 @@
    * MAPA
    */
 
+  const OFFLINE_DB = 'trilha4x4-offline';
+  const OFFLINE_STORE = 'percursos';
+
+  function abrirBancoOffline() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) return reject(new Error('IndexedDB indisponível'));
+      const req = indexedDB.open(OFFLINE_DB, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(OFFLINE_STORE)) {
+          db.createObjectStore(OFFLINE_STORE, { keyPath: 'trilhaId' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function lerPercursoOffline() {
+    const db = await abrirBancoOffline();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(OFFLINE_STORE, 'readonly');
+      const req = tx.objectStore(OFFLINE_STORE).get(String(trilhaId));
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function salvarPercursoOffline() {
+    if (!trilha || rotaPlanejadaPontos.length < 2) {
+      alert('Esta trilha ainda não possui uma rota disponível para baixar.');
+      return;
+    }
+    const pacote = {
+      trilhaId: String(trilhaId),
+      salvoEm: new Date().toISOString(),
+      trilha: {
+        id: trilha.id, name: trilha.name, code: trilha.code, type: trilha.type,
+        startAt: trilha.startAt, plannedEndAt: trilha.plannedEndAt,
+      },
+      points: rotaPlanejadaPontos.slice(0, 500),
+    };
+    const db = await abrirBancoOffline();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+      tx.objectStore(OFFLINE_STORE).put(pacote);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    await atualizarStatusOffline();
+  }
+
+  async function excluirPercursoOffline() {
+    if (!confirm('Excluir o percurso offline deste dispositivo?')) return;
+    const db = await abrirBancoOffline();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+      tx.objectStore(OFFLINE_STORE).delete(String(trilhaId));
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    await atualizarStatusOffline();
+  }
+
+  async function atualizarStatusOffline() {
+    const status = document.getElementById('offlineStatus');
+    const excluir = document.getElementById('excluirOfflineButton');
+    const baixar = document.getElementById('baixarOfflineButton');
+    try {
+      const pacote = await lerPercursoOffline();
+      if (!pacote) {
+        status.textContent = '📱 Percurso ainda não salvo neste dispositivo.';
+        excluir.style.display = 'none';
+        baixar.textContent = '⬇️ BAIXAR PERCURSO OFFLINE';
+        return;
+      }
+      const quando = new Date(pacote.salvoEm).toLocaleString('pt-BR');
+      status.textContent = '✅ Percurso disponível offline neste dispositivo · ' +
+        pacote.points.length + ' pontos · atualizado em ' + quando +
+        '. O mapa-base offline completo será habilitado no pacote móvel Android/iOS.';
+      excluir.style.display = '';
+      baixar.textContent = '↻ ATUALIZAR PERCURSO OFFLINE';
+    } catch (erro) {
+      console.warn('Armazenamento offline indisponível:', erro);
+      status.textContent = '⚠️ Este navegador não disponibilizou armazenamento persistente para o percurso.';
+    }
+  }
+
+  async function carregarPercursoOfflineComoFallback() {
+    try {
+      const pacote = await lerPercursoOffline();
+      if (!pacote || !Array.isArray(pacote.points) || pacote.points.length < 2) return false;
+      rotaPlanejadaPontos = pacote.points.slice(0, 500);
+      desenharRotaPlanejada();
+      const status = document.getElementById('rotaPlanejadaStatus');
+      if (status) status.textContent = '📴 Sem internet · usando percurso salvo neste dispositivo.';
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function iniciarMapa() {
     mapa = new maplibregl.Map({
       container: 'mapa',
@@ -866,6 +973,9 @@
     document.getElementById('verRotaButton').onclick = centralizarRotaPlanejada;
     document.getElementById('verTodosButton').onclick = enquadrarTudoNoMapa;
     document.getElementById('telaCheiaMapaButton').onclick = alternarMapaMaior;
+    document.getElementById('baixarOfflineButton').onclick = salvarPercursoOffline;
+    document.getElementById('excluirOfflineButton').onclick = excluirPercursoOffline;
+    atualizarStatusOffline();
 
     setTimeout(() => mapa.resize(), 100);
   }
@@ -1053,7 +1163,8 @@
       desenharRotaPlanejada();
     } catch (erro) {
       console.warn('Rota planejada indisponível:', erro);
-      status.textContent = 'Não foi possível carregar a rota planejada.';
+      const recuperada = await carregarPercursoOfflineComoFallback();
+      if (!recuperada) status.textContent = 'Não foi possível carregar a rota planejada.';
     }
   }
 
