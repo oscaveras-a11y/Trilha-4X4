@@ -62,7 +62,8 @@
       border-radius: 22px;
       padding: 20px;
       margin-bottom: 16px;
-      box-shadow: 0 14px 36px rgba(0,0,0,.28);\n      border:1px solid rgba(255,255,255,.1);
+      box-shadow: 0 14px 36px rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.1);
     }
 
     h1,
@@ -284,6 +285,95 @@
     }
     .botao, .voltar { border:1px solid rgba(255,255,255,.11); }
     .botao:not(#sosButton):hover, .voltar:hover { border-color:#69d337; background:#273429; }
+
+    /* Visual mobile inspirado na identidade principal do app */
+    .card{
+      background:linear-gradient(145deg,rgba(16,29,34,.98),rgba(6,15,18,.98));
+      border:1px solid rgba(124,157,170,.22);
+      box-shadow:0 16px 38px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.035);
+    }
+    .card h1,.card h2{letter-spacing:-.025em}
+    .codigo{background:#14242b;border:1px solid rgba(255,255,255,.1);color:#8bf3ad}
+    .botoes{gap:12px}
+    .botao{
+      text-align:left;
+      position:relative;
+      background:linear-gradient(145deg,#20333f,#11222b);
+      border-color:#405868;
+      box-shadow:inset 0 1px rgba(255,255,255,.06),0 8px 20px rgba(0,0,0,.22);
+    }
+    .botao:hover{filter:brightness(1.08)}
+    #criarRotaMapaButton,#modoTrilhaButton,#salvarRotaButton,#chegueiButton{
+      background:linear-gradient(145deg,#08a947,#04772f);
+      border-color:#1ee56b;
+    }
+    #editarRotaButton{
+      background:linear-gradient(145deg,#ffb83f,#ff8a12);
+      border-color:#ffc45e;
+      color:#16110a;
+    }
+    #sosButton{
+      background:linear-gradient(145deg,#d42c2c,#9e1717);
+      border-color:#ff4c4c;
+    }
+    #aindaTrilhaButton{border-color:#3d6680}
+    #estender6Button,#estender12Button,#estender24Button{color:#dce8ed}
+    #limparRotaButton,#excluirOfflineButton{background:linear-gradient(145deg,#542323,#29171a);border-color:#a83a3a}
+    #desfazerRotaButton{background:linear-gradient(145deg,#183d5b,#102738);border-color:#28659a}
+    #rotaProximoPasso,#editorRota{
+      background:linear-gradient(145deg,#12252d,#09171c)!important;
+      border-color:#314b57!important;
+    }
+    .mapa-toolbar{
+      padding:14px;
+      border-radius:20px;
+      background:linear-gradient(145deg,#10242b,#08171c);
+      border:1px solid rgba(124,157,170,.22);
+    }
+    .mapa-toolbar::before{
+      content:"🗺️  Ferramentas do mapa";
+      grid-column:1/-1;
+      font-size:17px;
+      font-weight:800;
+      color:#f5f7f6;
+      padding:2px 2px 4px;
+    }
+    .mapa-toolbar button{
+      background:linear-gradient(145deg,#1d3340,#10232c);
+      border-color:#3d5969;
+      color:#f5f7f6;
+    }
+    #baixarOfflineButton{border-color:#23855a;color:#8cf5b2}
+    #offlineStatus{
+      background:linear-gradient(90deg,#06391f,#092a1a);
+      border:1px solid #168f4c;
+      color:#80efa7;
+      font-weight:700;
+    }
+    .rota-livre-aviso{
+      background:linear-gradient(90deg,#07371e,#0a2518);
+      border-color:#168f4c;
+      color:#77efa2;
+    }
+    .informacoes .info{
+      background:linear-gradient(145deg,#142831,#0b1b21);
+      border-color:#29434f;
+      border-radius:16px;
+      padding:14px;
+    }
+    .informacoes .info strong{color:#7beaa1;font-size:12px;text-transform:uppercase;letter-spacing:.07em}
+    .status{background:#10242b;border:1px solid rgba(124,157,170,.16)}
+    .status.ativo{background:#09331e;border-color:#187b47;color:#8cf0ad}
+    .participante{
+      background:linear-gradient(145deg,#132831,#0a1b21);
+      border:1px solid #29434f;
+      border-radius:15px;
+      padding:14px;
+      margin:9px 0;
+    }
+    #mapa{border-radius:20px;border-color:#38525d;box-shadow:0 12px 30px rgba(0,0,0,.3)}
+    header{background:rgba(5,15,18,.96)}
+    .voltar{background:#123027;border-color:#1c6b49!important;border-radius:14px}
 
     @media (max-width: 600px) {
       #mapa {
