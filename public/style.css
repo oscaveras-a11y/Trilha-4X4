@@ -721,3 +721,126 @@ body { padding-bottom:96px; background:#07100b; }
   .painel-modulo-embutido button,.module-content button{min-height:42px;}
   .painel-modulo-embutido input,.painel-modulo-embutido select,.painel-modulo-embutido textarea{font-size:16px;}
 }
+
+
+/* =========================================================
+   HOME V2 — composição fiel à referência visual off-road
+   ========================================================= */
+body:not(.module-open){background:
+  radial-gradient(circle at 50% 0,#172319 0,#08100b 38%,#050a07 78%);
+}
+body:not(.module-open) .container{width:min(94%,1020px);padding-top:0;}
+body:not(.module-open) .hero{
+  min-height:430px;
+  margin:0 -2.5% 20px;
+  padding:38px 4.5% 42px;
+  justify-content:center;
+  border-radius:0 0 24px 24px;
+  isolation:isolate;
+  background:
+    linear-gradient(90deg,rgba(3,9,5,.98) 0%,rgba(4,10,6,.82) 42%,rgba(4,9,6,.22) 74%,rgba(3,8,5,.36) 100%),
+    radial-gradient(ellipse at 77% 43%,rgba(92,78,45,.85),rgba(29,49,30,.8) 36%,#09120c 73%);
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+body:not(.module-open) .hero::before{
+  content:"";
+  position:absolute;inset:0;z-index:-1;opacity:.62;
+  background:
+    radial-gradient(ellipse at 80% 72%,rgba(83,57,31,.75) 0 11%,transparent 34%),
+    repeating-linear-gradient(105deg,transparent 0 36px,rgba(255,255,255,.018) 37px 38px);
+}
+body:not(.module-open) .hero::after{display:none;}
+.hero-jeep{
+  position:absolute;z-index:0;right:3%;bottom:38px;
+  width:48%;height:62%;display:flex;align-items:flex-end;justify-content:center;
+  filter:drop-shadow(0 25px 20px rgba(0,0,0,.7));
+  overflow:hidden;
+}
+.hero-jeep span{font-size:clamp(150px,24vw,260px);transform:scaleX(-1);opacity:.93;}
+body:not(.module-open) .hero h1,
+body:not(.module-open) .hero>p,
+body:not(.module-open) .hero-brand,
+.hero-tagline{z-index:2;width:50%;max-width:490px;}
+body:not(.module-open) .hero h1{
+  margin:48px 0 14px;font-size:clamp(42px,6.3vw,64px);
+  line-height:.98;letter-spacing:-2.2px;text-shadow:0 3px 20px rgba(0,0,0,.7);
+}
+body:not(.module-open) .hero>p{font-size:20px;line-height:1.42;color:#d5dad6;}
+.hero-brand{flex-direction:column;align-items:flex-start;gap:0;line-height:1;}
+.hero-brand strong{font-size:30px;letter-spacing:-1px;}
+.hero-brand .mountain-mark{font-size:28px;color:#fff;letter-spacing:-7px;margin:0 0 5px 8px;}
+.hero-brand strong span{color:#59c62c;}
+.hero-tagline{margin-top:18px;color:#6cdf3b;font-size:22px;font-style:italic;line-height:1.05;transform:rotate(-3deg);}
+.hero-actions{top:28px;right:4%;}
+.hero-actions button{width:52px;height:52px;background:rgba(18,24,20,.88);border:1px solid rgba(255,255,255,.2);box-shadow:0 6px 18px rgba(0,0,0,.25);}
+
+body:not(.module-open) .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px;}
+body:not(.module-open) .menu-card{
+  min-height:196px;padding:78px 72px 20px 30px;
+  border:1px solid rgba(255,255,255,.25);border-radius:23px;
+  background-position:center;background-size:cover;
+  box-shadow:inset 0 -90px 90px rgba(2,7,4,.88),0 7px 20px rgba(0,0,0,.22);
+  transform:translateZ(0);
+}
+body:not(.module-open) .menu-card:hover{transform:translateY(-2px);border-color:rgba(109,214,61,.62);}
+body:not(.module-open) .menu-card::before{
+  content:"";position:absolute;inset:0;z-index:0;
+  background:linear-gradient(180deg,rgba(5,12,7,.08),rgba(4,10,6,.25) 35%,rgba(3,8,5,.92) 100%);
+}
+body:not(.module-open) .menu-card>div,
+body:not(.module-open) .menu-card>.card-arrow{position:relative;z-index:1;}
+body:not(.module-open) .card-icon{
+  position:absolute;z-index:2;left:28px;top:22px;
+  width:auto;height:auto;padding:0;background:none;border:0;
+  font-size:48px;filter:drop-shadow(0 5px 6px rgba(0,0,0,.55));
+}
+body:not(.module-open) .menu-card h2{font-size:27px;line-height:1.05;margin-bottom:7px;text-shadow:0 2px 8px #000;}
+body:not(.module-open) .menu-card p{font-size:17px;line-height:1.25;color:#e0e5e1;text-shadow:0 2px 6px #000;}
+body:not(.module-open) .card-arrow{
+  position:absolute;right:18px;bottom:18px;width:52px;height:52px;
+  background:rgba(7,13,9,.65);border:2px solid rgba(255,255,255,.25);
+  font-size:38px;
+}
+.card-entrar-trilha{background-image:linear-gradient(90deg,rgba(23,38,22,.35),rgba(4,10,6,.1)),radial-gradient(circle at 70% 20%,#405239,#142018 72%)!important;}
+.card-mapa{background-image:linear-gradient(90deg,rgba(10,25,13,.12),rgba(4,10,6,.15)),radial-gradient(ellipse at 62% 35%,#516c55,#1d3324 42%,#0b130e 80%)!important;}
+.card-trilhas{background-image:linear-gradient(100deg,rgba(14,35,16,.15),rgba(4,9,6,.18)),radial-gradient(ellipse at 64% 30%,#5c673b,#203a1e 45%,#0b120d 80%)!important;}
+.card-navegacao{background-image:linear-gradient(100deg,rgba(7,18,10,.2),rgba(4,9,6,.1)),radial-gradient(ellipse at 65% 28%,#725637,#243726 47%,#0a110d 82%)!important;}
+.card-ia{background-image:linear-gradient(100deg,rgba(8,20,12,.2),rgba(4,9,6,.12)),radial-gradient(ellipse at 66% 30%,#405b54,#1a3023 48%,#09100c 82%)!important;}
+.card-grupos{background-image:linear-gradient(100deg,rgba(10,16,10,.18),rgba(4,9,6,.1)),radial-gradient(ellipse at 68% 35%,#8a5b34,#34321e 43%,#0c120d 80%)!important;}
+.card-seguranca{background-image:linear-gradient(100deg,rgba(9,20,11,.2),rgba(4,9,6,.1)),radial-gradient(ellipse at 68% 30%,#4c653b,#1e351f 46%,#09100c 82%)!important;}
+.card-criar-trilha{background-image:linear-gradient(100deg,rgba(12,21,11,.18),rgba(4,9,6,.1)),radial-gradient(ellipse at 65% 32%,#695337,#30341f 45%,#0b120d 82%)!important;}
+body:not(.module-open) .card-meu-4x4{
+  grid-column:1/-1;min-height:150px;padding-left:150px;
+  background-image:linear-gradient(90deg,#15221a,#101912 52%,#0a100c)!important;
+}
+body:not(.module-open) .card-meu-4x4 .card-icon{font-size:70px;left:48px;top:36px;}
+body:not(.module-open) .card-meu-4x4>div:not(.card-icon){align-self:center;}
+
+body:not(.module-open) .bottom-nav{
+  width:min(92%,950px);height:84px;bottom:14px;border-radius:32px;
+  background:rgba(16,24,18,.97);border:1px solid rgba(255,255,255,.14);
+}
+body:not(.module-open) .bottom-nav button{min-width:120px;font-size:14px;}
+body:not(.module-open) .bottom-nav button.active{color:#62dd32;text-shadow:0 0 15px rgba(98,221,50,.25);}
+
+@media(max-width:650px){
+  body:not(.module-open) .hero{min-height:390px;margin:0 -3.2% 14px;padding:30px 5% 28px;justify-content:flex-end;}
+  .hero-jeep{width:70%;height:55%;right:-14%;bottom:72px;opacity:.78;}
+  .hero-jeep span{font-size:145px;}
+  body:not(.module-open) .hero h1,body:not(.module-open) .hero>p,body:not(.module-open) .hero-brand,.hero-tagline{width:76%;}
+  body:not(.module-open) .hero h1{font-size:42px;margin:34px 0 12px;}
+  body:not(.module-open) .hero>p{font-size:16px;}
+  .hero-brand strong{font-size:23px}.hero-brand .mountain-mark{font-size:22px}
+  .hero-tagline{font-size:18px;margin-top:12px;}
+  .hero-actions{right:4%;top:18px}.hero-actions button{width:44px;height:44px}
+  body:not(.module-open) .menu-grid{gap:12px;}
+  body:not(.module-open) .menu-card{min-height:166px;padding:66px 42px 15px 15px;border-radius:18px;}
+  body:not(.module-open) .card-icon{left:15px;top:14px;font-size:38px;}
+  body:not(.module-open) .menu-card h2{font-size:19px;}
+  body:not(.module-open) .menu-card p{font-size:13px;}
+  body:not(.module-open) .card-arrow{right:9px;bottom:13px;width:36px;height:36px;font-size:28px;}
+  body:not(.module-open) .card-meu-4x4{min-height:125px;padding-left:100px;}
+  body:not(.module-open) .card-meu-4x4 .card-icon{left:22px;top:28px;font-size:54px;}
+  body:not(.module-open) .bottom-nav{height:72px;padding:6px 10%;border-radius:26px;}
+  body:not(.module-open) .bottom-nav button{min-width:auto;}
+}
