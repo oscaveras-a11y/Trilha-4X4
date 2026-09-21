@@ -1,0 +1,22 @@
+{
+  "name": "Trilha 4X4",
+  "short_name": "Trilha 4X4",
+  "description": "Trilhas, grupos, navegação GPS e segurança para aventuras 4x4.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071009",
+  "theme_color": "#0b160e",
+  "lang": "pt-BR",
+  "categories": ["navigation", "travel", "social"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
