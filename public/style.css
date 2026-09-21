@@ -1008,3 +1008,47 @@ body:not(.module-open) .hero::after,
 body:not(.module-open) .hero-jeep{
   pointer-events:none!important;
 }
+
+/* =========================================================
+   SECONDARY V3 — acabamento e consistência dos módulos
+   ========================================================= */
+body.module-open .module-page{animation:moduleIn .18s ease-out;}
+@keyframes moduleIn{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+.module-content{display:grid;gap:14px;}
+.module-content>div,.painel-modulo-embutido>div{
+  color:#f4f7f4!important;
+  background:linear-gradient(145deg,rgba(23,32,25,.98),rgba(10,16,12,.98))!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+}
+.module-content p,.painel-modulo-embutido p{color:#aeb7b0!important;}
+.module-content label,.painel-modulo-embutido label{color:#f4f7f4!important;}
+.module-content input,.module-content select,.module-content textarea,
+.painel-modulo-embutido input,.painel-modulo-embutido select,.painel-modulo-embutido textarea{
+  color:#f4f7f4!important;background:#0e1610!important;border:1px solid rgba(255,255,255,.15)!important;
+  border-radius:11px!important;outline:none;
+}
+.module-content input:focus,.module-content select:focus,.module-content textarea:focus,
+.painel-modulo-embutido input:focus,.painel-modulo-embutido select:focus,.painel-modulo-embutido textarea:focus{
+  border-color:#69d337!important;box-shadow:0 0 0 3px rgba(105,211,55,.12);
+}
+.module-content button,.painel-modulo-embutido button{
+  border-radius:11px!important;font-weight:750;transition:transform .12s ease,border-color .12s ease;
+}
+.module-content button:active,.painel-modulo-embutido button:active{transform:scale(.985);}
+.module-content #mapa{border:1px solid rgba(255,255,255,.13);border-radius:18px;overflow:hidden;min-height:360px;}
+body.module-open .location-box{display:none!important;}
+
+/* overlays legados: converte painéis claros restantes para o mesmo tema */
+body.module-open [style*="background:white"],
+body.module-open [style*="background: white"]{
+  background:linear-gradient(145deg,#172019,#0d140f)!important;color:#f4f7f4!important;
+}
+body.module-open [style*="color:#333"]{color:#aeb7b0!important;}
+body.module-open [style*="background:#f8fafc"]{background:#0e1610!important;color:#f4f7f4!important;}
+body.module-open [style*="background:#fff"]{background:#111a13!important;color:#f4f7f4!important;}
+
+@media(max-width:650px){
+ .module-content>div,.painel-modulo-embutido>div{padding:16px!important;border-radius:17px!important;}
+ .module-content #mapa{min-height:58vh;}
+ body.module-open .module-topbar{position:sticky;top:0;z-index:900;background:rgba(11,18,13,.96);backdrop-filter:blur(14px);}
+}
