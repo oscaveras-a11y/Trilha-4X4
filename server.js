@@ -36,6 +36,16 @@ const clientesSOS = new Set();
  *       └── Set de conexões SSE
  */
 const clientesTrilhas = new Map();
+const clientesGrupos = new Map();
+
+function emitirEventoGrupo(groupId, tipo, payload = {}) {
+  const clientes = clientesGrupos.get(groupId);
+  if (!clientes) return;
+  const mensagem = `event: ${tipo}\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const cliente of clientes) {
+    try { cliente.res.write(mensagem); } catch {}
+  }
+}
 
 /*
  * Última localização conhecida de cada participante
@@ -2677,6 +2687,35 @@ app.get(
 );
 
 app.get(
+  '/api/grupos/:id/eventos',
+  exigirLogin,
+  (req, res) => {
+    const groupId = req.params.id;
+    const member = db.prepare(
+      'SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?'
+    ).get(groupId, req.user.id);
+    if (!member) return res.status(403).json({ ok: false, error: 'Você não participa deste grupo.' });
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+    if (!clientesGrupos.has(groupId)) clientesGrupos.set(groupId, new Set());
+    const cliente = { res, userId: req.user.id };
+    clientesGrupos.get(groupId).add(cliente);
+    res.write('event: conectado\\ndata: {}\\n\\n');
+
+    req.on('close', () => {
+      const clientes = clientesGrupos.get(groupId);
+      if (!clientes) return;
+      clientes.delete(cliente);
+      if (!clientes.size) clientesGrupos.delete(groupId);
+    });
+  }
+);
+
+app.get(
   '/api/grupos/:id/mensagens',
   exigirLogin,
   (req, res) => {
@@ -2719,6 +2758,7 @@ app.post(
       INSERT INTO group_messages (id, group_id, user_id, message, created_at)
       VALUES (?, ?, ?, ?, ?)
     `).run(id, groupId, req.user.id, message, createdAt);
+    emitirEventoGrupo(groupId, 'mensagem', { id, userId: req.user.id, createdAt });
 
     return res.status(201).json({
       ok: true,
@@ -2876,6 +2916,7 @@ app.post(
       ON CONFLICT(outing_id, user_id)
       DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at
     `).run(outingId, req.user.id, response, new Date().toISOString());
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'resposta_passeio', outingId });
 
     return res.json({ ok: true });
   }
