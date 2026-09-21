@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check public/app.js && node --check public/script.js"
+    "check": "node --check server.js && node --check public/app.js && node --check public/script.js && node --check tests/e2e-10-users.js",
+    "test:e2e10": "node tests/e2e-10-users.js"
   },
   "engines": {
     "node": ">=18"
