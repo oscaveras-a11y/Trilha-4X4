@@ -4261,6 +4261,7 @@ app.post(
 
 app.get(
   '/api/sos/stream',
+  exigirLogin,
   (req, res) => {
 
     res.setHeader(
@@ -4518,7 +4519,7 @@ app.delete(
  * =========================================================
  */
 
-app.post('/api/chat', limitarChat, async (req, res) => {
+app.post('/api/chat', exigirLogin, limitarChat, async (req, res) => {
   const mensagem = typeof req.body?.message === 'string'
     ? req.body.message.trim().slice(0, 2000)
     : '';
