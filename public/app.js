@@ -32,8 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('heroProfile')?.addEventListener('click', () => {
-    document.getElementById('avatarUsuario')?.click();
+  document.getElementById('heroProfile')?.addEventListener('click', async () => {
+    const avatar = document.getElementById('avatarUsuario');
+    if (avatar) {
+      avatar.click();
+      return;
+    }
+    window.location.href = '/auth.html';
+  });
+
+  document.getElementById('heroNotifications')?.addEventListener('click', () => {
+    mostrarNotificacoes();
   });
 
   document.getElementById('voltarHome')?.addEventListener('click', () => {
@@ -134,15 +143,31 @@ function criarAvatarUsuario(user) {
   avatar.style.fontWeight = 'bold';
   avatar.style.cursor = 'pointer';
 
-  if (loginButton && loginButton.parentElement) {
-    loginButton.parentElement.appendChild(avatar);
-  } else {
-    document.body.appendChild(avatar);
-  }
+  avatar.style.display = 'none';
+  document.body.appendChild(avatar);
 
   avatar.addEventListener('click', () => {
     mostrarMenuUsuario(user);
   });
+}
+
+function mostrarNotificacoes() {
+  const existente = document.getElementById('painelNotificacoes');
+  if (existente) {
+    existente.remove();
+    return;
+  }
+
+  const painel = document.createElement('div');
+  painel.id = 'painelNotificacoes';
+  painel.className = 'floating-top-panel notification-panel';
+  painel.innerHTML = `
+    <div class="floating-panel-title"><strong>🔔 Notificações</strong><button type="button" aria-label="Fechar">×</button></div>
+    <p>As atualizações importantes do Trilha 4X4 aparecerão aqui.</p>
+    <div class="notification-empty">Nenhuma nova notificação no momento.</div>
+  `;
+  document.body.appendChild(painel);
+  painel.querySelector('button')?.addEventListener('click', () => painel.remove());
 }
 
 function mostrarMenuUsuario(user) {
