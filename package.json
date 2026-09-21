@@ -2,7 +2,7 @@
   "name": "trilha-4x4",
   "version": "1.0.0",
   "private": true,
-  "description": "Aplicação para trilhas e eventos 4x4 com segurança, participantes, veículos e assistente OpenAI",
+  "description": "Aplicação para trilhas e eventos 4x4 com segurança, participantes, veículos e IA off-road",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,7 +16,6 @@
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "openai": "^4.80.1"
+    "express": "^4.21.2"
   }
 }
