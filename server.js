@@ -75,6 +75,16 @@ const clientesSOS = new Set();
  */
 const clientesTrilhas = new Map();
 const clientesGrupos = new Map();
+const clientesNotificacoes = new Map();
+
+function emitirEventoNotificacao(userId, payload = {}) {
+  const clientes = clientesNotificacoes.get(userId);
+  if (!clientes) return;
+  const mensagem = `event: notificacoes_atualizadas\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const cliente of clientes) {
+    try { cliente.res.write(mensagem); } catch {}
+  }
+}
 
 setInterval(() => {
   const heartbeat = ': heartbeat\n\n';
@@ -90,6 +100,11 @@ setInterval(() => {
   }
   for (const cliente of clientesSOS) {
     try { cliente.res.write(heartbeat); } catch {}
+  }
+  for (const usuarios of clientesNotificacoes.values()) {
+    for (const cliente of usuarios) {
+      try { cliente.res.write(heartbeat); } catch {}
+    }
   }
 }, 25000).unref();
 
@@ -1208,6 +1223,27 @@ app.get(
  * =========================================================
  */
 
+app.get('/api/notificacoes/eventos', exigirLogin, (req, res) => {
+  const userId = req.user.id;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+  if (!clientesNotificacoes.has(userId)) clientesNotificacoes.set(userId, new Set());
+  const cliente = { res };
+  clientesNotificacoes.get(userId).add(cliente);
+  res.write('event: conectado\ndata: {}\n\n');
+
+  req.on('close', () => {
+    const clientes = clientesNotificacoes.get(userId);
+    if (!clientes) return;
+    clientes.delete(cliente);
+    if (!clientes.size) clientesNotificacoes.delete(userId);
+  });
+});
+
 app.get('/api/notificacoes', exigirLogin, (req, res) => {
   try {
     const notificacoes = [];
@@ -2199,6 +2235,7 @@ app.get(
       'Connection',
       'keep-alive'
     );
+    res.setHeader('X-Accel-Buffering', 'no');
 
 
     if (
@@ -2813,6 +2850,7 @@ app.get(
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
     if (!clientesGrupos.has(groupId)) clientesGrupos.set(groupId, new Set());
@@ -4281,6 +4319,7 @@ app.get(
       'Connection',
       'keep-alive'
     );
+    res.setHeader('X-Accel-Buffering', 'no');
 
 
     if (
