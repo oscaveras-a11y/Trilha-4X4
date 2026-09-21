@@ -983,6 +983,10 @@ app.post(
       }
 
 
+      if (groupId) {
+        emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'trilha_criada', trailId: id, outingId });
+      }
+
       return res.status(201).json({
         ok: true,
         trail: {
@@ -1647,6 +1651,7 @@ app.put(
 
     salvar();
 
+    transmitirEventoTrilha(trilhaId, 'rota_atualizada', { pointCount: normalized.length });
     return res.json({
       ok: true,
       message: 'Rota planejada salva com sucesso.',
@@ -1672,6 +1677,7 @@ app.delete(
       'DELETE FROM trail_route_points WHERE trail_id = ?'
     ).run(trilhaId);
 
+    transmitirEventoTrilha(trilhaId, 'rota_atualizada', { pointCount: 0 });
     return res.json({
       ok: true,
       message: 'Rota planejada removida.',
