@@ -964,3 +964,30 @@ body.safety-page .reason-button:hover,body.safety-page .reason-button.selected{b
 .notification-item strong{display:block;font-size:14px;margin-bottom:3px;}
 .notification-item small{display:block;color:#adb6af;line-height:1.3;}
 .notification-chevron{font-size:27px;color:#69d337;}
+
+/* Perfil completo */
+.profile-page{display:grid;gap:16px;}
+.profile-identity,.profile-section{
+ background:linear-gradient(145deg,rgba(23,32,25,.98),rgba(10,16,12,.98));
+ border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px;box-shadow:0 16px 42px rgba(0,0,0,.26);
+}
+.profile-identity{display:flex;align-items:center;gap:16px;}
+.profile-avatar-large{width:74px;height:74px;flex:0 0 74px;border-radius:50%;display:grid;place-items:center;background:#69d337;color:#0a120b;font-size:30px;font-weight:900;box-shadow:0 0 0 5px rgba(105,211,55,.12);}
+.profile-kicker{font-size:11px;font-weight:900;letter-spacing:1.5px;color:#69d337;}
+.profile-identity h2{margin:3px 0 2px;font-size:25px;}
+.profile-identity p{margin:0;color:#aeb7b0;overflow-wrap:anywhere;}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.profile-stats button{padding:17px 8px;border-radius:17px;border:1px solid rgba(255,255,255,.11);background:#141e16;color:#fff;cursor:pointer;}
+.profile-stats strong{display:block;color:#69d337;font-size:25px;}
+.profile-stats span{font-size:12px;color:#b8c0ba;}
+.profile-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+.profile-section-head h3{margin:0;}
+.profile-section-head button{border:0;background:transparent;color:#69d337;font-weight:800;cursor:pointer;}
+.profile-preview{display:grid;gap:8px;}
+.profile-preview>div{padding:12px 13px;border-radius:13px;background:#101812;border:1px solid rgba(255,255,255,.08);}
+.profile-preview strong,.profile-preview small{display:block;}
+.profile-preview small{margin-top:3px;color:#9fa9a1;}
+.profile-preview p{color:#9fa9a1;margin:4px 0;}
+.profile-logout{width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,100,100,.3);background:rgba(120,24,24,.28);color:#ffaaa5;font-weight:800;cursor:pointer;}
+.profile-logout:hover{background:rgba(150,30,30,.38);}
+@media(max-width:520px){.profile-identity{align-items:flex-start}.profile-stats{gap:7px}.profile-stats strong{font-size:21px}.profile-section{padding:16px}}
