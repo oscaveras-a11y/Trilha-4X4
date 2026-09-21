@@ -935,6 +935,7 @@
       rotaPlanejadaLinha = { sourceId, layerId };
 
       if (editandoRota) {
+        mapa.off('click', layerId, inserirPontoNaLinhaPlanejada);
         mapa.on('click', layerId, inserirPontoNaLinhaPlanejada);
         mapa.on('mouseenter', layerId, () => { mapa.getCanvas().style.cursor = 'crosshair'; });
         mapa.on('mouseleave', layerId, () => { mapa.getCanvas().style.cursor = ''; });
@@ -2353,7 +2354,6 @@
    */
 
   iniciarMapa();
-  mapa.on('click', adicionarPontoPlanejadoNoMapa);
 
   carregarTrilha();
 
