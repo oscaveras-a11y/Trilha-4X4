@@ -3,7 +3,6 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const OpenAI = require('openai');
 
 const db = require('./lib/db');
 
@@ -63,61 +62,99 @@ const localizacoesTrilha = new Map();
 
 /*
  * =========================================================
- * OPENAI
+ * IA 4X4 GRATUITA / PESQUISA WEB
  * =========================================================
  */
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn(
-    'Aviso: OPENAI_API_KEY não foi definida. Usando resposta local de fallback em /api/chat.'
-  );
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const TAVILY_API_URL = 'https://api.tavily.com/search';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+
+if (!process.env.GROQ_API_KEY) {
+  console.warn('Aviso: GROQ_API_KEY não definida. /api/chat usará fallback local.');
 }
-
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
-  : null;
-
+if (!process.env.TAVILY_API_KEY) {
+  console.warn('Aviso: TAVILY_API_KEY não definida. A IA funcionará sem pesquisa web.');
+}
 
 function gerarRespostaLocal(mensagem) {
-  const texto = mensagem.toLowerCase().trim();
-
-  if (!texto) {
-    return 'Escreva uma mensagem para que eu possa te ajudar.';
+  const texto = String(mensagem || '').toLowerCase().trim();
+  if (!texto) return 'Escreva uma mensagem para que eu possa te ajudar.';
+  if (texto.includes('olá') || texto === 'oi') {
+    return 'Olá! Sou a IA 4x4 do Trilha 4X4. Posso ajudar com trilhas, veículos, preparação, pneus, recuperação, navegação e segurança off-road.';
   }
-
-  if (
-    texto.includes('olá') ||
-    texto.includes('oi')
-  ) {
-    return 'Olá! Sou o assistente do Trilha 4X4. Como posso ajudar?';
+  if (texto.includes('como funciona') || texto.includes('para que serve')) {
+    return 'O Trilha 4X4 ajuda a organizar passeios off-road, grupos, veículos, rotas, localização e recursos de segurança durante o percurso.';
   }
-
-  if (
-    texto.includes('4x4') ||
-    texto.includes('movimento')
-  ) {
-    return 'O Trilha 4X4 ajuda a organizar passeios e eventos off-road, reunir participantes e veículos, acompanhar a trilha e usar recursos de segurança durante o percurso.';
-  }
-
-  if (
-    texto.includes('como funciona') ||
-    texto.includes('funciona')
-  ) {
-    return 'O app permite criar e entrar em trilhas por código, cadastrar o veículo, acompanhar participantes e usar recursos de localização e segurança durante o percurso.';
-  }
-
-  if (
-    texto.includes('objetivo') ||
-    texto.includes('para que serve')
-  ) {
-    return 'O objetivo do Trilha 4X4 é facilitar a organização de passeios e eventos off-road e aumentar a segurança e a comunicação entre os participantes.';
-  }
-
-  return 'Posso ajudar com o uso do Trilha 4X4, participação em eventos, veículos, recursos de segurança e dúvidas gerais sobre trilhas off-road.';
+  return 'No momento a IA 4x4 está sem acesso ao modelo online. Ainda posso ajudar com recursos do Trilha 4X4; tente novamente em alguns instantes para dúvidas técnicas ou pesquisas atuais.';
 }
 
+function devePesquisarWeb(mensagem) {
+  const texto = String(mensagem || '').toLowerCase();
+  return /\b(atual|hoje|preço|onde|comprar|trilha|estrada|bloqueio|interdição|clima|chuva|peça|pneu|óleo|manual|especifica|torque|pressão|calibr|defeito|problema|prepar|guincho|4x4|off.?road|jeep|s10|troller|suzuki|toyota|mitsubishi|ford|chevrolet)\b/.test(texto);
+}
+
+async function pesquisarOffRoad(mensagem) {
+  if (!process.env.TAVILY_API_KEY || !devePesquisarWeb(mensagem)) return [];
+  const resposta = await fetch(TAVILY_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
+    },
+    body: JSON.stringify({
+      query: `${mensagem} off-road 4x4`,
+      search_depth: 'basic',
+      max_results: 5,
+      include_answer: false,
+      include_raw_content: false,
+    }),
+    signal: AbortSignal.timeout(9000),
+  });
+  if (!resposta.ok) throw new Error(`Tavily HTTP ${resposta.status}`);
+  const dados = await resposta.json();
+  return Array.isArray(dados.results)
+    ? dados.results.slice(0, 5).map((item) => ({
+        title: String(item.title || '').slice(0, 180),
+        url: String(item.url || '').slice(0, 1000),
+        content: String(item.content || '').slice(0, 1200),
+      }))
+    : [];
+}
+
+async function responderComGroq(mensagem, contextoTexto, fontes) {
+  if (!process.env.GROQ_API_KEY) return null;
+  const pesquisa = fontes.length
+    ? fontes.map((f, i) => `[${i + 1}] ${f.title}\n${f.content}\nFonte: ${f.url}`).join('\n\n')
+    : 'Nenhuma pesquisa web foi usada nesta pergunta.';
+
+  const resposta = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      temperature: 0.25,
+      max_tokens: 900,
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é a IA 4x4 do aplicativo Trilha 4X4. Responda em português do Brasil. Especialidades: veículos 4x4, mecânica, preparação off-road, pneus, guincho, recuperação, navegação, trilhas e segurança. Seja prático e técnico. Não invente especificações. Quando houver fontes web, use-as para fatos atuais e indique no texto [1], [2] etc. Em procedimentos com risco mecânico ou de segurança, destaque verificações críticas e incertezas.',
+        },
+        {
+          role: 'user',
+          content: `Contexto do app: ${contextoTexto || 'nenhum'}\n\nPesquisa web:\n${pesquisa}\n\nPergunta: ${mensagem}`,
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!resposta.ok) throw new Error(`Groq HTTP ${resposta.status}`);
+  const dados = await resposta.json();
+  return dados.choices?.[0]?.message?.content?.trim() || null;
+}
 
 /*
  * =========================================================
@@ -4394,128 +4431,64 @@ app.delete(
 
 /*
  * =========================================================
- * CHAT / OPENAI
+ * IA 4X4
  * =========================================================
  */
 
-app.post(
-  '/api/chat',
-  async (req, res) => {
+app.post('/api/chat', async (req, res) => {
+  const mensagem = typeof req.body?.message === 'string'
+    ? req.body.message.trim().slice(0, 2000)
+    : '';
+  if (!mensagem) {
+    return res.status(400).json({ ok: false, error: 'Informe uma mensagem.' });
+  }
 
-    try {
+  const usuario = usuarioAtual(req);
+  const veiculo = usuario
+    ? db.prepare(`
+        SELECT type, brand, model, year, color, plate
+        FROM vehicles
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(usuario.id)
+    : null;
+  const contexto = req.body?.context || {};
+  const contextoTexto = [
+    usuario ? `Usuário: ${usuario.name}.` : '',
+    veiculo ? `Veículo: ${veiculo.type} ${veiculo.brand} ${veiculo.model}${veiculo.year ? `, ${veiculo.year}` : ''}.` : '',
+    contexto.trailName ? `Trilha atual: ${String(contexto.trailName).slice(0, 120)}.` : '',
+    contexto.trailStatus ? `Status da trilha: ${String(contexto.trailStatus).slice(0, 40)}.` : '',
+  ].filter(Boolean).join(' ');
 
-      const mensagem =
-        typeof req.body?.message ===
-        'string'
-          ? req.body.message.trim()
-          : '';
+  let fontes = [];
+  try {
+    fontes = await pesquisarOffRoad(mensagem);
+  } catch (error) {
+    console.warn('Pesquisa off-road indisponível:', error.message);
+  }
 
-      const usuario = usuarioAtual(req);
-      const veiculo = usuario
-        ? db.prepare(`
-            SELECT type, brand, model, year, color, plate
-            FROM vehicles
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-          `).get(usuario.id)
-        : null;
-      const contexto = req.body?.context || {};
-      const contextoTexto = [
-        usuario ? `Usuário: ${usuario.name}.` : '',
-        veiculo
-          ? `Veículo: ${veiculo.type} ${veiculo.brand} ${veiculo.model}${veiculo.year ? `, ${veiculo.year}` : ''}.`
-          : '',
-        contexto.trailName
-          ? `Trilha atual: ${String(contexto.trailName).slice(0, 120)}.`
-          : '',
-        contexto.trailStatus
-          ? `Status da trilha: ${String(contexto.trailStatus).slice(0, 40)}.`
-          : '',
-      ].filter(Boolean).join(' ');
-
-
-      if (!mensagem) {
-        return res.status(400).json({
-          ok: false,
-          error:
-            'Informe uma mensagem.',
-        });
-      }
-
-
-      /*
-       * Se não houver chave da OpenAI,
-       * utiliza o fallback local.
-       */
-
-      if (
-        !process.env.OPENAI_API_KEY
-      ) {
-
-        return res.json({
-          ok: true,
-          reply:
-            gerarRespostaLocal(
-              mensagem
-            ),
-          source:
-            'local',
-        });
-      }
-
-
-      const resposta =
-        await openai.responses.create({
-          model:
-            process.env.OPENAI_MODEL ||
-            'gpt-4o-mini',
-
-          input:
-            `Você é o assistente do Trilha 4X4. Use o contexto fornecido para orientar com segurança, sem inventar dados.\nContexto: ${contextoTexto || 'nenhum'}\nMensagem: ${mensagem}`,
-        });
-
-
+  try {
+    const reply = await responderComGroq(mensagem, contextoTexto, fontes);
+    if (reply) {
       return res.json({
         ok: true,
-
-        reply:
-          resposta.output_text ||
-          gerarRespostaLocal(
-            mensagem
-          ),
-
-        source:
-          'openai',
-      });
-
-    } catch (error) {
-
-      console.error(
-        'Erro na API da OpenAI:',
-        error
-      );
-
-
-      /*
-       * Mesmo se a OpenAI falhar,
-       * o aplicativo continua respondendo.
-       */
-
-      return res.json({
-        ok: true,
-
-        reply:
-          gerarRespostaLocal(
-            req.body?.message || ''
-          ),
-
-        source:
-          'local-fallback',
+        reply,
+        source: fontes.length ? 'groq+tavily' : 'groq',
+        sources: fontes.map(({ title, url }) => ({ title, url })),
       });
     }
+  } catch (error) {
+    console.warn('IA Groq indisponível:', error.message);
   }
-);
+
+  return res.json({
+    ok: true,
+    reply: gerarRespostaLocal(mensagem),
+    source: 'local-fallback',
+    sources: fontes.map(({ title, url }) => ({ title, url })),
+  });
+});
 
 
 /*
