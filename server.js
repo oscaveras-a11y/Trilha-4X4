@@ -19,6 +19,45 @@ const {
 const app = express();
 const port = Number(process.env.PORT || 3000);
 
+app.set('trust proxy', 1);
+
+const limites = new Map();
+function limitarRequisicoes({ janelaMs, max, prefixo }) {
+  return (req, res, next) => {
+    const agora = Date.now();
+    const chave = prefixo + ':' + (req.ip || req.socket.remoteAddress || 'desconhecido');
+    const atual = limites.get(chave);
+    if (!atual || atual.resetAt <= agora) {
+      limites.set(chave, { count: 1, resetAt: agora + janelaMs });
+      return next();
+    }
+    atual.count += 1;
+    if (atual.count > max) {
+      res.setHeader('Retry-After', Math.max(1, Math.ceil((atual.resetAt - agora) / 1000)));
+      return res.status(429).json({ ok: false, error: 'Muitas tentativas. Aguarde um pouco e tente novamente.' });
+    }
+    next();
+  };
+}
+
+const limitarAuth = limitarRequisicoes({ janelaMs: 15 * 60 * 1000, max: 40, prefixo: 'auth' });
+const limitarChat = limitarRequisicoes({ janelaMs: 60 * 1000, max: 30, prefixo: 'chat' });
+
+setInterval(() => {
+  const agora = Date.now();
+  for (const [chave, valor] of limites) {
+    if (valor.resetAt <= agora) limites.delete(chave);
+  }
+}, 10 * 60 * 1000).unref();
+
+function cookieSessao(req, token, maxAge = 2592000) {
+  const protocoloEncaminhado = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+  const seguro = req.secure || protocoloEncaminhado === 'https';
+  return 'trilha4x4_session=' + encodeURIComponent(token || '') +
+    '; HttpOnly; Path=/; SameSite=Lax; Max-Age=' + maxAge +
+    (seguro ? '; Secure' : '');
+}
+
 const MAX_ALERTAS = 100;
 const LIMITE_MOTIVO = 120;
 
@@ -36,6 +75,23 @@ const clientesSOS = new Set();
  */
 const clientesTrilhas = new Map();
 const clientesGrupos = new Map();
+
+setInterval(() => {
+  const heartbeat = ': heartbeat\n\n';
+  for (const grupo of clientesGrupos.values()) {
+    for (const cliente of grupo) {
+      try { cliente.res.write(heartbeat); } catch {}
+    }
+  }
+  for (const trilha of clientesTrilhas.values()) {
+    for (const cliente of trilha) {
+      try { cliente.res.write(heartbeat); } catch {}
+    }
+  }
+  for (const cliente of clientesSOS) {
+    try { cliente.res.write(heartbeat); } catch {}
+  }
+}, 25000).unref();
 
 function emitirEventoGrupo(groupId, tipo, payload = {}) {
   const clientes = clientesGrupos.get(groupId);
@@ -265,6 +321,14 @@ function exigirLogin(
  * =========================================================
  */
 
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+
 app.use(
   express.json({
     limit: '32kb',
@@ -360,6 +424,7 @@ app.get(
 
 app.post(
   '/api/auth/register',
+  limitarAuth,
   (req, res) => {
     const name =
       typeof req.body?.name === 'string'
@@ -472,7 +537,7 @@ app.post(
 
     res.setHeader(
       'Set-Cookie',
-      `trilha4x4_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000`
+      cookieSessao(req, token)
     );
 
 
@@ -496,6 +561,7 @@ app.post(
 
 app.post(
   '/api/auth/login',
+  limitarAuth,
   (req, res) => {
     const email =
       normalizeEmail(
@@ -551,7 +617,7 @@ app.post(
 
     res.setHeader(
       'Set-Cookie',
-      `trilha4x4_session=${encodeURIComponent(token)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=2592000`
+      cookieSessao(req, token)
     );
 
 
@@ -591,7 +657,7 @@ app.post(
 
     res.setHeader(
       'Set-Cookie',
-      'trilha4x4_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0'
+      cookieSessao(req, '', 0)
     );
 
 
@@ -4435,7 +4501,7 @@ app.delete(
  * =========================================================
  */
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', limitarChat, async (req, res) => {
   const mensagem = typeof req.body?.message === 'string'
     ? req.body.message.trim().slice(0, 2000)
     : '';
