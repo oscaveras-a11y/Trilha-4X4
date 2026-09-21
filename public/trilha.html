@@ -2324,6 +2324,16 @@
         }
       );
 
+    conexaoTempoReal
+      .addEventListener(
+        'rota_atualizada',
+        async () => {
+          if (!editandoRota && !gravandoRotaGps) {
+            await carregarRotaPlanejada();
+          }
+        }
+      );
+
 
     conexaoTempoReal.onerror =
       () => {
