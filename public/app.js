@@ -1290,13 +1290,17 @@ async function abrirDetalhesGrupo(groupId) {
           return;
         }
 
+        const estavaPertoDoFim =
+          caixa.scrollHeight - caixa.scrollTop - caixa.clientHeight < 100;
         caixa.innerHTML = (dadosChat.messages || []).map((m) =>
           '<div style="margin-bottom:10px;"><strong>' +
           escaparTextoTrilha(m.userName) + '</strong> <small>' +
           new Date(m.createdAt).toLocaleString('pt-BR') + '</small><br>' +
           escaparTextoTrilha(m.message) + '</div>'
         ).join('') || '<p>A conversa ainda está vazia. Mande a primeira mensagem.</p>';
-        caixa.scrollTop = caixa.scrollHeight;
+        if (estavaPertoDoFim) {
+          caixa.scrollTop = caixa.scrollHeight;
+        }
       } catch (erro) {
         console.warn('Chat do grupo indisponível:', erro);
       }
@@ -1340,7 +1344,9 @@ async function abrirDetalhesGrupo(groupId) {
           chatGrupoEventos?.close();
           return;
         }
-        await atualizarChatGrupo();
+        chatGrupoEventos?.close();
+        chatGrupoEventos = null;
+        await abrirDetalhesGrupo(groupId);
       });
       chatGrupoEventos.onerror = () => {
         // EventSource tenta reconectar automaticamente.
