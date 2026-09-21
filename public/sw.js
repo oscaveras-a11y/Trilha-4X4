@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v7';
+const CACHE_NAME = 'trilha-4x4-v8';
 const APP_SHELL = [
   '/',
   '/index.html',
