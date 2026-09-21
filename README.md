@@ -1,78 +1,126 @@
-# Trilha-4X4
+# Trilha 4X4
 
-Aplicação web para organizar trilhas, passeios e eventos 4x4, com cadastro de participantes e veículos, aprovação de entrada, localização durante a trilha, SOS e assistente integrado à API da OpenAI.
+Aplicação web/PWA para organizar grupos, passeios e trilhas 4x4, com participantes, veículos, navegação off-road, localização em tempo real e SOS.
 
-## Recursos atuais
+## Estado atual
 
-- Cadastro e login de usuários.
-- Cadastro de um ou mais veículos; placa é opcional.
-- Criação de trilhas/eventos com ID no formato `4X4-XXXXX`.
-- Busca de trilha pelo ID.
-- Solicitação de participação em qualquer trilha, inclusive pública.
-- Entrada somente após aprovação do criador/administrador.
-- Painel do administrador com nome, e-mail e dados do veículo do solicitante.
-- Aprovação ou recusa pelo administrador.
-- Modo Trilha com compartilhamento de localização entre participantes.
-- Histórico de rota e recursos de segurança/SOS.
-- Assistente do Trilha 4X4 usando a API da OpenAI, com fallback local quando a API não estiver configurada ou estiver indisponível.
+O fluxo principal é:
+
+**Grupo de amigos → passeio → passeio confirmado → administrador cria a trilha → rota/navegação.**
+
+Recursos implementados:
+- Cadastro, login e sessão.
+- Cadastro de veículos; placa opcional.
+- Grupos, convites, membros e passeios.
+- Confirmação de participação em passeios.
+- Criação de trilhas e ID `4X4-XXXXX`.
+- Solicitação de entrada e aprovação pelo administrador.
+- Rota planejada livre, sem obrigar o traçado a seguir estradas.
+- Limite de 500 pontos por rota.
+- Localização dos participantes e SOS em tempo real.
+- Eventos em tempo real para grupos, rota e notificações.
+- PWA para instalação em Android/iPhone.
+- Pacote do percurso salvo no aparelho para fallback offline.
+
+> O mapa-base ainda usa o OpenFreeMap e precisa de internet. O percurso salvo permanece disponível no aparelho, mas o download completo dos tiles de uma região será uma etapa posterior.
 
 ## Requisitos
 
-- Node.js 18+
-- Uma chave da API da OpenAI para habilitar o assistente online
+- Node.js 18 ou superior
+- npm
 
-## Configuração
+A IA é opcional e não é necessária para testar o aplicativo.
+
+## Preparar no computador
 
 ```bash
+git fetch origin
+git reset --hard origin/main
 npm install
+```
+
+Crie o `.env` a partir do exemplo, se ainda não existir:
+
+### Windows PowerShell
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### macOS/Linux
+
+```bash
 cp .env.example .env
 ```
 
-Preencha o arquivo local `.env`:
+Para o teste básico, o `.env` pode ficar apenas com:
 
 ```env
-OPENAI_API_KEY=sua_chave_aqui
-OPENAI_MODEL=gpt-4o-mini
 PORT=3000
+TRILHA4X4_DB_PATH=
+GROQ_API_KEY=
+GROQ_MODEL=openai/gpt-oss-20b
+TAVILY_API_KEY=
 ```
 
-O arquivo `.env` é ignorado pelo Git e não deve ser commitado. Se uma chave já tiver sido publicada anteriormente, revogue-a e gere outra antes de usar o projeto.
+Nunca publique chaves de API no GitHub.
 
-## Executar
+## Verificação antes do teste
+
+```bash
+npm run check
+npm run test:e2e10
+```
+
+Depois:
 
 ```bash
 npm start
 ```
 
-Abra `http://localhost:3000`.
+Abra no próprio computador:
 
-Para desenvolvimento com reinício automático:
+`http://localhost:3000`
 
-```bash
-npm run dev
-```
-
-## Verificação do servidor
+Verificação rápida do servidor:
 
 ```bash
 curl http://localhost:3000/health
 ```
 
-## Assistente OpenAI
+Resposta esperada:
 
-```bash
-curl -X POST http://localhost:3000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Como funciona o Trilha 4X4?"}'
+```json
+{"ok":true}
 ```
 
-A chave da OpenAI é utilizada somente no servidor e nunca deve ser enviada ao navegador.
+## Teste no celular
+
+Para Android/iPhone fora do computador, o servidor precisa ser publicado por HTTPS. Para o teste planejado, usaremos o computador como servidor e um Cloudflare Tunnel, evitando abrir diretamente uma porta do roteador.
+
+Fluxo:
+
+```text
+Android / iPhone
+      ↓ HTTPS
+Cloudflare Tunnel
+      ↓
+PC :3000
+      ↓
+Node/Express + SQLite
+```
+
+O computador, o servidor Node e a conexão com a internet precisam permanecer ativos durante o teste.
 
 ## Fluxo de participação
 
-1. O administrador cria a trilha e recebe um ID `4X4-XXXXX`.
-2. O participante cadastra seu veículo e procura a trilha pelo ID.
-3. A solicitação fica pendente independentemente de a trilha ser pública, privada ou por convite.
-4. O criador/administrador visualiza nome, e-mail e veículo do participante. A placa pode ficar vazia.
-5. O criador/administrador aceita ou recusa a solicitação.
-6. Somente após a aprovação o participante passa a acessar a página e os recursos daquela trilha.
+1. O grupo combina um passeio.
+2. O administrador cria e confirma o passeio.
+3. O administrador cria a trilha vinculada ao passeio.
+4. Os participantes entram com seus veículos.
+5. Quando necessário, o administrador aprova a entrada.
+6. A trilha passa a concentrar navegação, rota, localização e SOS.
+
+## IA 4x4
+
+A integração opcional usa Groq e Tavily. Sem as chaves, o aplicativo continua funcionando com fallback local. A configuração da IA não é requisito para os testes móveis desta versão.
