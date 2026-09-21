@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   verificarUsuarioLogado();
   atualizarNotificacoes();
-  setInterval(atualizarNotificacoes, 60000);
+  iniciarNotificacoesTempoReal();
 });
 
 async function verificarUsuarioLogado() {
@@ -156,6 +156,16 @@ function criarAvatarUsuario(user) {
 }
 
 let notificacoesAtuais = [];
+let notificacoesEventos = null;
+
+function iniciarNotificacoesTempoReal() {
+  if (typeof EventSource === 'undefined' || notificacoesEventos) return;
+  notificacoesEventos = new EventSource('/api/notificacoes/eventos');
+  notificacoesEventos.addEventListener('notificacoes_atualizadas', atualizarNotificacoes);
+  notificacoesEventos.onerror = () => {
+    // EventSource reconecta automaticamente quando a rede volta.
+  };
+}
 
 async function atualizarNotificacoes() {
   const dot = document.getElementById('notificationDot');
