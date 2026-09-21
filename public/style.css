@@ -880,3 +880,63 @@ body:not(.module-open) .card-meu-4x4{
     url("https://images.unsplash.com/photo-1748445852908-22ea8c9a5fde?auto=format&fit=crop&w=1400&q=74")!important;
   background-size:cover!important;background-position:center 58%!important;
 }
+
+
+/* =========================================================
+   SECONDARY V2 — identidade visual unificada com a Home
+   ========================================================= */
+body.module-open{
+  background:
+    linear-gradient(rgba(4,10,6,.86),rgba(4,10,6,.96)),
+    url("https://images.unsplash.com/photo-1748445852908-22ea8c9a5fde?auto=format&fit=crop&w=1800&q=70") center/cover fixed;
+}
+body.module-open .header{display:none;}
+body.module-open .container{width:min(94%,1020px);padding:22px 0 110px;}
+.module-page{max-width:1020px;margin:auto;}
+.module-topbar{
+  margin:0 0 22px;padding:20px 22px;border:1px solid rgba(255,255,255,.13);
+  border-radius:22px;background:rgba(12,20,14,.88);backdrop-filter:blur(14px);
+  box-shadow:0 14px 40px rgba(0,0,0,.28);
+}
+.module-kicker{color:#69d337;letter-spacing:1.5px;font-weight:900;}
+.module-topbar h1{margin:3px 0 0;font-size:clamp(28px,5vw,42px);letter-spacing:-1px;}
+.module-back{background:#202821!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:12px!important;color:#fff!important;padding:11px 15px!important;}
+.module-content>div,.painel-modulo-embutido>div,
+.module-content section,.painel-modulo-embutido section{
+  border-radius:20px!important;
+}
+.module-content .offroad-panel,.painel-modulo-embutido>div{
+  background:linear-gradient(145deg,rgba(24,34,26,.97),rgba(10,16,12,.97))!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  box-shadow:0 16px 42px rgba(0,0,0,.3)!important;
+}
+.module-content h2,.painel-modulo-embutido h2{letter-spacing:-.4px;}
+.module-content input,.module-content select,.module-content textarea,
+.painel-modulo-embutido input,.painel-modulo-embutido select,.painel-modulo-embutido textarea{
+  min-height:46px;background:rgba(5,11,7,.88)!important;border-color:rgba(255,255,255,.15)!important;
+}
+.module-content button,.painel-modulo-embutido button{min-height:44px;}
+.module-content button:not(.danger):hover,.painel-modulo-embutido button:not(.danger):hover{border-color:#69d337!important;}
+body.module-open .bottom-nav{background:rgba(11,18,13,.96);}
+
+/* Segurança independente */
+body.safety-page{
+  background:
+    linear-gradient(rgba(4,10,6,.86),rgba(4,10,6,.96)),
+    url("https://images.unsplash.com/photo-1748445852908-22ea8c9a5fde?auto=format&fit=crop&w=1800&q=68") center/cover fixed;
+}
+body.safety-page .header{position:relative;background:rgba(9,15,11,.92);border-bottom:1px solid rgba(255,255,255,.1);}
+body.safety-page .hero{min-height:auto;margin:20px 0;padding:28px;border-radius:22px;background:linear-gradient(135deg,rgba(27,40,29,.96),rgba(10,17,12,.95));border:1px solid rgba(255,255,255,.13);}
+body.safety-page .hero::after{display:none;}
+body.safety-page .sos-page,body.safety-page .location-panel,body.safety-page .reason-panel,body.safety-page .alerta-card,body.safety-page .realtime-status{
+  background:rgba(17,25,19,.96)!important;border-color:rgba(255,255,255,.13)!important;color:#f4f7f4!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.24);
+}
+body.safety-page .reason-button{background:#172019!important;color:#fff!important;border-color:rgba(255,255,255,.13)!important;}
+body.safety-page .reason-button:hover,body.safety-page .reason-button.selected{border-color:#69d337!important;background:#203023!important;}
+
+@media(max-width:650px){
+ body.module-open .container{width:94%;padding-top:0}
+ .module-topbar{margin:0 -3.2% 16px;border-radius:0 0 20px 20px;padding:16px 4%;}
+ .module-topbar h1{font-size:28px}
+}
