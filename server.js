@@ -1078,6 +1078,107 @@ app.get(
 
 /*
  * =========================================================
+ * NOTIFICAÇÕES
+ * =========================================================
+ */
+
+app.get('/api/notificacoes', exigirLogin, (req, res) => {
+  try {
+    const notificacoes = [];
+
+    const pendentesAdmin = db.prepare(`
+      SELECT r.id, r.created_at AS createdAt, t.id AS trailId, t.name AS trailName,
+             u.name AS userName
+      FROM trail_join_requests r
+      INNER JOIN trails t ON t.id = r.trail_id
+      INNER JOIN users u ON u.id = r.user_id
+      INNER JOIN trail_members tm ON tm.trail_id = t.id
+        AND tm.user_id = ? AND tm.role = 'admin' AND tm.status = 'active'
+      WHERE r.status = 'pending'
+      ORDER BY r.created_at DESC
+      LIMIT 30
+    `).all(req.user.id);
+
+    pendentesAdmin.forEach((item) => notificacoes.push({
+      id: 'join-admin-' + item.id,
+      type: 'trail_request',
+      icon: '🙋',
+      title: 'Nova solicitação de participação',
+      message: item.userName + ' quer entrar em ' + item.trailName + '.',
+      createdAt: item.createdAt,
+      action: { page: 'trilhas', trailId: item.trailId },
+      unread: true,
+    }));
+
+    const minhasDecisoes = db.prepare(`
+      SELECT r.id, r.status, r.created_at AS createdAt, r.decided_at AS decidedAt,
+             t.id AS trailId, t.name AS trailName
+      FROM trail_join_requests r
+      INNER JOIN trails t ON t.id = r.trail_id
+      WHERE r.user_id = ? AND r.status IN ('accepted','rejected')
+        AND r.created_at = (
+          SELECT MAX(r2.created_at) FROM trail_join_requests r2
+          WHERE r2.user_id = r.user_id AND r2.trail_id = r.trail_id
+        )
+      ORDER BY COALESCE(r.decided_at, r.created_at) DESC
+      LIMIT 20
+    `).all(req.user.id);
+
+    minhasDecisoes.forEach((item) => notificacoes.push({
+      id: 'join-user-' + item.id,
+      type: 'trail_decision',
+      icon: item.status === 'accepted' ? '✅' : '❌',
+      title: item.status === 'accepted' ? 'Participação aprovada' : 'Participação não aprovada',
+      message: item.status === 'accepted'
+        ? 'Você foi aprovado para participar de ' + item.trailName + '.'
+        : 'Sua solicitação para ' + item.trailName + ' não foi aprovada.',
+      createdAt: item.decidedAt || item.createdAt,
+      action: item.status === 'accepted'
+        ? { href: '/trilha.html?id=' + encodeURIComponent(item.trailId) }
+        : { page: 'trilhas' },
+      unread: true,
+    }));
+
+    const roles = db.prepare(`
+      SELECT o.id, o.title, o.starts_at AS startsAt, o.status, o.created_at AS createdAt,
+             g.id AS groupId, g.name AS groupName, r.response AS myResponse
+      FROM group_outings o
+      INNER JOIN groups g ON g.id = o.group_id
+      INNER JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ?
+      LEFT JOIN group_outing_responses r ON r.outing_id = o.id AND r.user_id = ?
+      WHERE o.status != 'cancelled'
+        AND datetime(o.starts_at) >= datetime('now', '-1 day')
+      ORDER BY o.starts_at ASC
+      LIMIT 20
+    `).all(req.user.id, req.user.id);
+
+    roles.forEach((item) => {
+      if (!item.myResponse) notificacoes.push({
+        id: 'outing-' + item.id,
+        type: 'group_outing',
+        icon: '👥',
+        title: 'Passeio no grupo ' + item.groupName,
+        message: item.title + ' — confirme se você vai participar.',
+        createdAt: item.createdAt,
+        action: { page: 'grupos', groupId: item.groupId },
+        unread: true,
+      });
+    });
+
+    notificacoes.sort((a, b) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+    return res.json({ ok: true, notifications: notificacoes.slice(0, 50) });
+  } catch (error) {
+    console.error('Erro ao montar notificações:', error);
+    return res.status(500).json({ ok: false, error: 'Não foi possível carregar as notificações.' });
+  }
+});
+
+
+/*
+ * =========================================================
  * ABRIR UMA TRILHA
  * =========================================================
  */
