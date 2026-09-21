@@ -1022,7 +1022,9 @@
       salvoEm: new Date().toISOString(),
       trilha: {
         id: trilha.id, name: trilha.name, code: trilha.code, type: trilha.type,
-        startAt: trilha.startAt, plannedEndAt: trilha.plannedEndAt,
+        visibility: trilha.visibility, startAt: trilha.startAt,
+        plannedEndAt: trilha.plannedEndAt, safetyEndAt: trilha.safetyEndAt,
+        role: trilha.role, participants: Array.isArray(trilha.participants) ? trilha.participants : [],
       },
       points: rotaPlanejadaPontos.slice(0, 500),
     };
@@ -1082,6 +1084,32 @@
       if (status) status.textContent = '📴 Sem internet · usando percurso salvo neste dispositivo.';
       return true;
     } catch {
+      return false;
+    }
+  }
+
+  async function carregarTrilhaOfflineComoFallback() {
+    try {
+      const pacote = await lerPercursoOffline();
+      if (!pacote?.trilha) return false;
+      trilha = pacote.trilha;
+      document.title = trilha.name + ' — Trilha 4X4';
+      document.getElementById('nomeTrilha').textContent = trilha.name || 'Trilha offline';
+      document.getElementById('codigoTrilha').textContent = trilha.code || '—';
+      document.getElementById('tipoTrilha').textContent = traduzirTipo(trilha.type);
+      document.getElementById('acessoTrilha').textContent = traduzirAcesso(trilha.visibility);
+      document.getElementById('inicioTrilha').textContent = dataBR(trilha.startAt);
+      document.getElementById('fimTrilha').textContent = dataBR(trilha.plannedEndAt);
+      document.getElementById('segurancaTrilha').textContent = dataBR(trilha.safetyEndAt);
+      document.getElementById('papelTrilha').textContent =
+        trilha.role === 'admin' ? 'Administrador (offline)' : 'Membro (offline)';
+      mostrarParticipantes(trilha.participants || []);
+      const adminAcoes = document.getElementById('adminTrilhaAcoes');
+      if (adminAcoes) adminAcoes.style.display = 'none';
+      await carregarPercursoOfflineComoFallback();
+      return true;
+    } catch (erro) {
+      console.warn('Dados offline da trilha indisponíveis:', erro);
       return false;
     }
   }
@@ -1277,7 +1305,10 @@
       const dados = await resposta.json();
 
       if (!resposta.ok) {
-        status.textContent = dados.error || 'Não foi possível carregar a rota planejada.';
+        const recuperada = await carregarPercursoOfflineComoFallback();
+        if (!recuperada) {
+          status.textContent = dados.error || 'Não foi possível carregar a rota planejada.';
+        }
         return;
       }
 
@@ -1662,12 +1693,10 @@
 
 
       if (!resposta.ok) {
-
-        mostrarErro(
-          dados.error ||
-          'Não foi possível abrir esta trilha.'
-        );
-
+        const recuperada = await carregarTrilhaOfflineComoFallback();
+        if (!recuperada) {
+          mostrarErro(dados.error || 'Não foi possível abrir esta trilha.');
+        }
         return;
       }
 
@@ -1759,9 +1788,10 @@
 
       console.error(erro);
 
-      mostrarErro(
-        'Não foi possível conectar ao servidor.'
-      );
+      const recuperada = await carregarTrilhaOfflineComoFallback();
+      if (!recuperada) {
+        mostrarErro('Não foi possível conectar ao servidor.');
+      }
 
     }
 
