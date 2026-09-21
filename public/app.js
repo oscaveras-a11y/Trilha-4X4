@@ -25,21 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
         history.pushState({}, '', '/');
         mostrarHome();
       } else if (page === 'perfil') {
-        document.getElementById('avatarUsuario')?.click();
+        abrirPerfilCompleto();
       } else {
         navegarParaModulo(page);
       }
     });
   });
 
-  document.getElementById('heroProfile')?.addEventListener('click', async () => {
-    const avatar = document.getElementById('avatarUsuario');
-    if (avatar) {
-      avatar.click();
-      return;
-    }
-    window.location.href = '/auth.html';
-  });
+  document.getElementById('heroProfile')?.addEventListener('click', () => abrirPerfilCompleto());
 
   document.getElementById('heroNotifications')?.addEventListener('click', () => {
     mostrarNotificacoes();
@@ -216,6 +209,80 @@ async function mostrarNotificacoes() {
   document.body.appendChild(painel);
   await atualizarNotificacoes();
   renderizarNotificacoes(painel);
+}
+
+async function abrirPerfilCompleto() {
+  try {
+    const auth = await fetch('/api/auth/me', { cache: 'no-store' });
+    const authData = await auth.json();
+    if (!authData.authenticated) {
+      window.location.href = '/auth.html';
+      return;
+    }
+
+    const [veiculosResp, gruposResp, trilhasResp] = await Promise.all([
+      fetch('/api/veiculos', { cache: 'no-store' }),
+      fetch('/api/grupos', { cache: 'no-store' }),
+      fetch('/api/trilhas', { cache: 'no-store' }),
+    ]);
+    const [veiculosData, gruposData, trilhasData] = await Promise.all([
+      veiculosResp.json(), gruposResp.json(), trilhasResp.json()
+    ]);
+    const veiculos = veiculosData.vehicles || [];
+    const grupos = gruposData.groups || [];
+    const trilhas = trilhasData.trails || [];
+    const user = authData.user;
+    const inicial = escaparHtml((user.name || 'U').trim().charAt(0).toUpperCase());
+
+    document.body.classList.add('module-open');
+    document.getElementById('homeHero').style.display = 'none';
+    document.getElementById('homeMenu').style.display = 'none';
+    document.querySelectorAll('[data-home-only="1"]').forEach((el) => el.style.display = 'none');
+    const pagina = document.getElementById('paginaModulo');
+    pagina.style.display = 'block';
+    document.getElementById('tituloModulo').textContent = 'Meu perfil';
+    const destino = document.getElementById('conteudoModulo');
+
+    destino.innerHTML = `
+      <section class="profile-page">
+        <div class="profile-identity">
+          <div class="profile-avatar-large">${inicial}</div>
+          <div><span class="profile-kicker">TRILHA 4X4</span><h2>${escaparHtml(user.name || 'Usuário')}</h2><p>${escaparHtml(user.email || '')}</p></div>
+        </div>
+        <div class="profile-stats">
+          <button type="button" data-profile-go="meu-4x4"><strong>${veiculos.length}</strong><span>Veículos</span></button>
+          <button type="button" data-profile-go="grupos"><strong>${grupos.length}</strong><span>Grupos</span></button>
+          <button type="button" data-profile-go="trilhas"><strong>${trilhas.length}</strong><span>Trilhas</span></button>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-head"><h3>🚙 Meus veículos</h3><button type="button" data-profile-go="meu-4x4">Ver todos</button></div>
+          <div class="profile-preview">${veiculos.length ? veiculos.slice(0,3).map(v => `<div><strong>${escaparHtml(v.brand)} ${escaparHtml(v.model)}</strong><small>${escaparHtml(v.type)}${v.year ? ' · '+v.year : ''}</small></div>`).join('') : '<p>Nenhum veículo cadastrado.</p>'}</div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-head"><h3>👥 Meus grupos</h3><button type="button" data-profile-go="grupos">Ver todos</button></div>
+          <div class="profile-preview">${grupos.length ? grupos.slice(0,3).map(g => `<div><strong>${escaparHtml(g.name)}</strong><small>${g.memberCount || 0} membros · ${g.role === 'admin' ? 'Administrador' : 'Membro'}</small></div>`).join('') : '<p>Você ainda não participa de grupos.</p>'}</div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-head"><h3>🛣️ Minhas trilhas</h3><button type="button" data-profile-go="trilhas">Ver todas</button></div>
+          <div class="profile-preview">${trilhas.length ? trilhas.slice(0,3).map(t => `<div><strong>${escaparHtml(t.name)}</strong><small>${escaparHtml(t.code || '')} · ${t.role === 'admin' ? 'Administrador' : 'Participante'}</small></div>`).join('') : '<p>Nenhuma trilha vinculada ao seu perfil.</p>'}</div>
+        </div>
+        <button type="button" class="profile-logout" id="profileLogout">Sair da conta</button>
+      </section>
+    `;
+
+    destino.querySelectorAll('[data-profile-go]').forEach((btn) =>
+      btn.addEventListener('click', () => navegarParaModulo(btn.dataset.profileGo))
+    );
+    document.getElementById('profileLogout')?.addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+      window.location.href = '/';
+    });
+    document.querySelectorAll('[data-bottom-page]').forEach((b) =>
+      b.classList.toggle('active', b.dataset.bottomPage === 'perfil'));
+  } catch (erro) {
+    console.error('Erro ao abrir perfil:', erro);
+    alert('Não foi possível carregar seu perfil.');
+  }
 }
 
 function mostrarMenuUsuario(user) {
