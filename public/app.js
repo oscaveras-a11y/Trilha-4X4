@@ -1267,12 +1267,15 @@ async function abrirDetalhesGrupo(groupId) {
       abrirGrupos();
     };
 
-    let chatGrupoTimer = null;
+    let chatGrupoEventos = null;
 
     async function atualizarChatGrupo() {
       const caixa = document.getElementById('mensagensGrupo');
       if (!caixa || !document.body.contains(caixa)) {
-        if (chatGrupoTimer) clearInterval(chatGrupoTimer);
+        if (chatGrupoEventos) {
+          chatGrupoEventos.close();
+          chatGrupoEventos = null;
+        }
         return;
       }
 
@@ -1329,7 +1332,20 @@ async function abrirDetalhesGrupo(groupId) {
     });
 
     atualizarChatGrupo();
-    chatGrupoTimer = setInterval(atualizarChatGrupo, 5000);
+    if (typeof EventSource !== 'undefined') {
+      chatGrupoEventos = new EventSource('/api/grupos/' + encodeURIComponent(groupId) + '/eventos');
+      chatGrupoEventos.addEventListener('mensagem', atualizarChatGrupo);
+      chatGrupoEventos.addEventListener('grupo_atualizado', async () => {
+        if (!document.getElementById('detalhesGrupo')) {
+          chatGrupoEventos?.close();
+          return;
+        }
+        await atualizarChatGrupo();
+      });
+      chatGrupoEventos.onerror = () => {
+        // EventSource tenta reconectar automaticamente.
+      };
+    }
 
     const confirmarParticipacaoRole = document.getElementById('confirmarParticipacaoRole');
     const cancelarParticipacaoRole = document.getElementById('cancelarParticipacaoRole');
