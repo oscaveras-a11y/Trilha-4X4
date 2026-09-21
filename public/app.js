@@ -2042,6 +2042,8 @@ function abrirCriarTrilha() {
     .getElementById('fecharCriarTrilha')
     .addEventListener('click', () => {
       overlay.remove();
+        history.pushState({}, '', '/');
+        mostrarHome();
     });
 
   document
@@ -2598,12 +2600,16 @@ ${trilha.role === 'admin' ? `
       .getElementById('fecharListaTrilhas')
       .addEventListener('click', () => {
         overlay.remove();
+        history.pushState({}, '', '/');
+        mostrarHome();
       });
 
     document
       .getElementById('fecharListaTrilhasRodape')
       .addEventListener('click', () => {
         overlay.remove();
+        history.pushState({}, '', '/');
+        mostrarHome();
       });
 
   } catch (error) {
@@ -2744,6 +2750,8 @@ function abrirEntrarTrilha() {
     .getElementById('fecharEntrarTrilha')
     .addEventListener('click', () => {
       overlay.remove();
+        history.pushState({}, '', '/');
+        mostrarHome();
     });
 
   document
