@@ -685,6 +685,8 @@ app.post(
         startAt,
         plannedEndAt,
         releaseAt,
+        groupId,
+        outingId,
       } = req.body || {};
 
 
@@ -812,56 +814,60 @@ app.post(
         ).toISOString();
 
 
-      db.prepare(`
-        INSERT INTO trails (
-          id,
-          code,
-          name,
-          type,
-          visibility,
-          creator_id,
-          start_at,
-          planned_end_at,
-          release_at,
-          safety_end_at,
-          status,
-          created_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
-      `).run(
-        id,
-        code,
-        String(name).trim(),
-        type,
-        visibility,
-        req.user.id,
-        inicio.toISOString(),
-        fim.toISOString(),
-        liberacao,
-        safetyEndAt,
-        agora
-      );
+      const criarTrilha = db.transaction(() => {
+        if (groupId || outingId) {
+          if (!groupId || !outingId) {
+            throw new Error('GROUP_OUTING_CONTEXT_INVALID');
+          }
+          const membroGrupo = db.prepare(
+            'SELECT role FROM group_members WHERE group_id = ? AND user_id = ?'
+          ).get(groupId, req.user.id);
+          const outing = db.prepare(
+            "SELECT trail_id AS trailId FROM group_outings WHERE id = ? AND group_id = ? AND status = 'confirmed'"
+          ).get(outingId, groupId);
+          if (!membroGrupo || membroGrupo.role !== 'admin') throw new Error('GROUP_ADMIN_REQUIRED');
+          if (!outing) throw new Error('OUTING_NOT_CONFIRMED');
+          if (outing.trailId) throw new Error('OUTING_ALREADY_LINKED');
+        }
 
+        db.prepare(`
+          INSERT INTO trails (
+            id, code, name, type, visibility, creator_id, start_at,
+            planned_end_at, release_at, safety_end_at, status, created_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
+        `).run(
+          id, code, String(name).trim(), type, visibility, req.user.id,
+          inicio.toISOString(), fim.toISOString(), liberacao, safetyEndAt, agora
+        );
 
-      /*
-       * Criador entra automaticamente
-       * como administrador.
-       */
+        db.prepare(`
+          INSERT INTO trail_members (trail_id, user_id, role, status, joined_at)
+          VALUES (?, ?, 'admin', 'active', ?)
+        `).run(id, req.user.id, agora);
 
-      db.prepare(`
-        INSERT INTO trail_members (
-          trail_id,
-          user_id,
-          role,
-          status,
-          joined_at
-        )
-        VALUES (?, ?, 'admin', 'active', ?)
-      `).run(
-        id,
-        req.user.id,
-        agora
-      );
+        if (groupId && outingId) {
+          db.prepare('UPDATE group_outings SET trail_id = ? WHERE id = ? AND group_id = ?')
+            .run(id, outingId, groupId);
+          db.prepare('INSERT OR IGNORE INTO group_trails (group_id, trail_id, added_at) VALUES (?, ?, ?)')
+            .run(groupId, id, agora);
+        }
+      });
+
+      try {
+        criarTrilha();
+      } catch (erroFluxo) {
+        const mensagens = {
+          GROUP_OUTING_CONTEXT_INVALID: 'O contexto do passeio está incompleto.',
+          GROUP_ADMIN_REQUIRED: 'Somente o administrador do grupo pode criar a trilha deste passeio.',
+          OUTING_NOT_CONFIRMED: 'Confirme o passeio antes de criar a trilha.',
+          OUTING_ALREADY_LINKED: 'Este passeio já possui uma trilha vinculada.',
+        };
+        if (mensagens[erroFluxo.message]) {
+          return res.status(400).json({ ok: false, error: mensagens[erroFluxo.message] });
+        }
+        throw erroFluxo;
+      }
 
 
       return res.status(201).json({
