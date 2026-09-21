@@ -2643,6 +2643,7 @@ app.post(
       VALUES (?, ?, ?, ?, 1)
     `).run(code, groupId, req.user.id, new Date().toISOString());
 
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'convite_atualizado' });
     return res.status(201).json({ ok: true, code });
   }
 );
@@ -2668,6 +2669,7 @@ app.post(
       VALUES (?, ?, 'member', ?)
     `).run(invite.groupId, req.user.id, new Date().toISOString());
 
+    emitirEventoGrupo(invite.groupId, 'grupo_atualizado', { motivo: 'membro_entrou', userId: req.user.id });
     return res.json({
       ok: true,
       group: { id: invite.groupId, name: invite.name },
@@ -2902,6 +2904,7 @@ app.post(
       VALUES (?, ?, 'going', ?)
     `).run(id, req.user.id, createdAt);
 
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'passeio_criado', outingId: id });
     return res.status(201).json({ ok: true, outing: { id, title } });
   }
 );
@@ -2934,6 +2937,7 @@ app.put(
       SET title = ?, description = ?, meeting_point = ?, starts_at = ?
       WHERE id = ? AND group_id = ?
     `).run(title, description, meetingPoint, new Date(startsAt).toISOString(), outingId, groupId);
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'passeio_editado', outingId });
     return res.json({ ok: true });
   }
 );
@@ -2970,6 +2974,7 @@ app.post(
         .run(groupId, trailId, agora);
     });
     transaction();
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'trilha_vinculada', outingId, trailId });
     return res.json({ ok: true });
   }
 );
@@ -2991,6 +2996,7 @@ app.post(
     const result = db.prepare('UPDATE group_outings SET status = ? WHERE id = ? AND group_id = ?')
       .run(status, outingId, groupId);
     if (!result.changes) return res.status(404).json({ ok: false, error: 'Rolê não encontrado.' });
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'status_passeio', outingId, status });
     return res.json({ ok: true, status });
   }
 );
@@ -3059,6 +3065,7 @@ app.put(
 
     db.prepare('UPDATE group_members SET role = ? WHERE group_id = ? AND user_id = ?')
       .run(role, groupId, userId);
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'papel_membro', userId, role });
     return res.json({ ok: true });
   }
 );
@@ -3101,6 +3108,7 @@ app.delete(
       db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, userId);
     });
     remover();
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'membro_removido', userId });
     return res.json({ ok: true });
   }
 );
@@ -3137,6 +3145,7 @@ app.delete(
       db.prepare('DELETE FROM group_members WHERE group_id = ? AND user_id = ?').run(groupId, req.user.id);
     });
     sair();
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'membro_saiu', userId: req.user.id });
     return res.json({ ok: true, message: 'Você saiu do grupo.' });
   }
 );
@@ -3181,6 +3190,7 @@ app.put(
       });
     }
 
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'grupo_editado' });
     return res.json({
       ok: true,
       group: { id: groupId, name },
@@ -3219,6 +3229,7 @@ app.post(
       VALUES (?, ?, ?)
     `).run(groupId, trailId, new Date().toISOString());
 
+    emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'trilha_adicionada', trailId });
     return res.json({ ok: true, message: 'Trilha adicionada ao grupo.' });
   }
 );
