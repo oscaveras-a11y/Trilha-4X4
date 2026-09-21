@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v26';
+const CACHE_NAME = 'trilha-4x4-v27';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,6 +8,9 @@ const APP_SHELL = [
   '/trilha.html',
   '/manifest.webmanifest',
   '/icon.svg',
+  '/apple-touch-icon.png',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
