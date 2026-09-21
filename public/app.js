@@ -2115,6 +2115,8 @@ function abrirCriarTrilha() {
               plannedEndAt,
               releaseAt:
                 releaseAt || null,
+              groupId: grupoPrefill || null,
+              outingId: rolePrefill || null,
             }),
           }
         );
@@ -2139,26 +2141,6 @@ Você é o administrador desta trilha.`
         );
 
         overlay.remove();
-
-        if (dados.trail?.id && grupoPrefill && rolePrefill) {
-          try {
-            const vinculo = await fetch(
-              '/api/grupos/' + encodeURIComponent(grupoPrefill) +
-              '/roles/' + encodeURIComponent(rolePrefill) + '/vincular-trilha',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trailId: dados.trail.id }),
-              }
-            );
-            const dadosVinculo = await vinculo.json();
-            if (!vinculo.ok) {
-              alert(dadosVinculo.error || 'A trilha foi criada, mas não foi possível vinculá-la ao passeio.');
-            }
-          } catch (erroVinculo) {
-            console.warn('Falha ao vincular trilha ao passeio:', erroVinculo);
-          }
-        }
 
         if (dados.trail?.id) {
           window.location.href =
