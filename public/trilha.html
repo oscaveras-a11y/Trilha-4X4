@@ -1136,29 +1136,44 @@
       return;
     }
 
-    rotaPlanejadaPontos = [];
-    gravandoRotaGps = true;
-    rotaGpsPausada = false;
-    editandoRota = false;
-    desenharRotaPlanejada();
-    atualizarBotoesGravacaoRota();
+    const pontosAnteriores = rotaPlanejadaPontos.slice();
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        rotaPlanejadaPontos = [];
+        gravandoRotaGps = true;
+        rotaGpsPausada = false;
+        editandoRota = false;
+        desenharRotaPlanejada();
+        atualizarBotoesGravacaoRota();
+
         registrarPontoRotaGps(position);
         mapa.setView(
           [position.coords.latitude, position.coords.longitude],
           17
         );
-      },
-      erroGPS,
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
 
-    watchRotaGpsId = navigator.geolocation.watchPosition(
-      registrarPontoRotaGps,
-      erroGPS,
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 2000 }
+        if (watchRotaGpsId !== null) {
+          navigator.geolocation.clearWatch(watchRotaGpsId);
+        }
+        watchRotaGpsId = navigator.geolocation.watchPosition(
+          registrarPontoRotaGps,
+          (erro) => {
+            erroGPS(erro);
+            if (erro?.code === 1) finalizarGravacaoRotaGps();
+          },
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 2000 }
+        );
+      },
+      (erro) => {
+        rotaPlanejadaPontos = pontosAnteriores;
+        gravandoRotaGps = false;
+        rotaGpsPausada = false;
+        atualizarBotoesGravacaoRota();
+        desenharRotaPlanejada();
+        erroGPS(erro);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   }
 
@@ -1200,6 +1215,25 @@
           ' pontos. Revise a rota e toque em SALVAR ROTA.'
         : 'Gravação finalizada. São necessários pelo menos 2 pontos para salvar.';
   }
+
+
+  function encerrarWatchersDaPagina() {
+    if (watchRotaGpsId !== null) {
+      navigator.geolocation.clearWatch(watchRotaGpsId);
+      watchRotaGpsId = null;
+    }
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    if (conexaoTempoReal) {
+      conexaoTempoReal.close();
+      conexaoTempoReal = null;
+    }
+  }
+
+  window.addEventListener('pagehide', encerrarWatchersDaPagina);
+  window.addEventListener('beforeunload', encerrarWatchersDaPagina);
 
 
   function configurarEditorRota() {
