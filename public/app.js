@@ -658,7 +658,7 @@ async function abrirMeu4x4() {
               Ano: ${veiculo.year || '-'} | Cor: ${escaparTextoTrilha(veiculo.color) || '-'}<br>
               Placa: ${escaparTextoTrilha(veiculo.plate) || 'não informada'}
               <button type="button"
-                onclick='editarMeuVeiculo(${JSON.stringify(veiculo)})'
+                onclick="editarMeuVeiculoSeguro('${encodeURIComponent(JSON.stringify(veiculo))}')"
                 style="display:block;margin-top:10px;padding:8px 11px;border:1px solid #222;border-radius:8px;background:#202821;color:#fff;cursor:pointer;font-weight:bold;">
                 ✏️ Editar veículo
               </button>
@@ -718,6 +718,15 @@ async function abrirMeu4x4() {
   } catch (error) {
     console.error('Erro ao carregar veículos:', error);
     alert('Não foi possível conectar ao servidor.');
+  }
+}
+
+function editarMeuVeiculoSeguro(payload) {
+  try {
+    editarMeuVeiculo(JSON.parse(decodeURIComponent(payload)));
+  } catch (erro) {
+    console.error('Dados do veículo inválidos:', erro);
+    alert('Não foi possível abrir a edição deste veículo.');
   }
 }
 
@@ -948,7 +957,7 @@ async function abrirDetalhesGrupo(groupId) {
                   <button type="button" onclick="alterarFuncaoMembroGrupo('${grupo.id}','${m.id}','${m.role === 'admin' ? 'member' : 'admin'}')">
                     ${m.role === 'admin' ? 'Tornar participante' : '⭐ Tornar administrador'}
                   </button>
-                  <button type="button" onclick="removerMembroGrupo('${grupo.id}','${m.id}','${escaparTextoTrilha(m.name)}')">Remover</button>
+                  <button type="button" onclick="removerMembroGrupo('${grupo.id}','${m.id}',decodeURIComponent('${encodeURIComponent(m.name)}'))">Remover</button>
                 </div>
               ` : ''}
             </div>
@@ -1305,7 +1314,7 @@ async function abrirGrupos() {
               ${grupo.role === 'admin' ? `
                 <button
                   type="button"
-                  onclick="editarGrupo('${grupo.id}', '${escaparTextoTrilha(grupo.name)}')"
+                  onclick="editarGrupo('${grupo.id}', decodeURIComponent('${encodeURIComponent(grupo.name)}'))"
                   style="display:block;margin-top:10px;padding:9px 12px;border:1px solid #222;border-radius:8px;background:#202821;color:#fff;cursor:pointer;font-weight:bold;"
                 >✏️ Editar grupo</button>
               ` : ''}
