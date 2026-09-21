@@ -2179,9 +2179,52 @@ function abrirTrilha(trilhaId) {
     return;
   }
 
-  window.location.href =
-    '/trilha.html?id=' +
-    encodeURIComponent(trilhaId);
+  const trilha = (window.__trilhasCarregadas || []).find(
+    (item) => String(item.id) === String(trilhaId)
+  );
+
+  const overlayLista = document.getElementById('listaTrilhasOverlay');
+  if (overlayLista) overlayLista.style.display = 'none';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'trilhaSelecionadaOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;
+    align-items:center;justify-content:center;z-index:100000;padding:20px;box-sizing:border-box;
+  `;
+
+  const nome = escaparTextoTrilha(trilha?.name || 'Trilha selecionada');
+  const codigo = escaparTextoTrilha(trilha?.code || '');
+
+  overlay.innerHTML = `
+    <div style="width:min(560px,100%);background:#101612;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:22px;box-sizing:border-box;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <small style="color:#9da79f;">TRILHA SELECIONADA</small>
+          <h2 style="margin:5px 0 0;">🛣️ ${nome}</h2>
+          ${codigo ? `<div style="margin-top:5px;color:#9da79f;">${codigo}</div>` : ''}
+        </div>
+        <button type="button" id="fecharTrilhaSelecionada" aria-label="Fechar" style="border:0;background:#252e27;color:#fff;border-radius:10px;padding:8px 12px;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+
+      <button type="button" id="abrirNavegacaoTrilha" style="width:100%;margin-top:22px;padding:20px;text-align:left;border:1px solid rgba(105,211,55,.35);border-radius:16px;background:#17231a;color:#fff;cursor:pointer;">
+        <strong style="display:block;font-size:19px;">🧭 Navegação</strong>
+        <span style="display:block;margin-top:7px;color:#b7c0b9;line-height:1.45;">Abrir mapa, rota da trilha, GPS e localização dos participantes →</span>
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const fechar = () => {
+    overlay.remove();
+    if (overlayLista) overlayLista.style.display = '';
+  };
+
+  document.getElementById('fecharTrilhaSelecionada').addEventListener('click', fechar);
+  document.getElementById('abrirNavegacaoTrilha').addEventListener('click', () => {
+    window.location.href = '/trilha.html?id=' + encodeURIComponent(trilhaId);
+  });
 }
 
 function escaparTextoTrilha(valor) {
@@ -2345,6 +2388,8 @@ async function abrirListaTrilhas() {
     const trilhas = Array.isArray(dados.trails)
       ? dados.trails
       : [];
+
+    window.__trilhasCarregadas = trilhas;
 
     const idsAtivos = new Set(trilhas.map((trilha) => trilha.id));
     const solicitacoes = Array.isArray(dadosSolicitacoes.requests)
