@@ -2952,6 +2952,12 @@ app.post(
     `).run(id, req.user.id, createdAt);
 
     emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'passeio_criado', outingId: id });
+    const membrosGrupo = db.prepare(
+      'SELECT user_id AS userId FROM group_members WHERE group_id = ? AND user_id <> ?'
+    ).all(groupId, req.user.id);
+    membrosGrupo.forEach((membroGrupo) =>
+      emitirEventoNotificacao(membroGrupo.userId, { motivo: 'passeio_criado', groupId, outingId: id })
+    );
     return res.status(201).json({ ok: true, outing: { id, title } });
   }
 );
@@ -3073,6 +3079,7 @@ app.post(
       DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at
     `).run(outingId, req.user.id, response, new Date().toISOString());
     emitirEventoGrupo(groupId, 'grupo_atualizado', { motivo: 'resposta_passeio', outingId });
+    emitirEventoNotificacao(req.user.id, { motivo: 'resposta_passeio', groupId, outingId });
 
     return res.json({ ok: true });
   }
@@ -3954,6 +3961,13 @@ app.post(
         agora
       );
 
+      const adminsTrilha = db.prepare(
+        "SELECT user_id AS userId FROM trail_members WHERE trail_id = ? AND role = 'admin' AND status = 'active'"
+      ).all(trilha.id);
+      adminsTrilha.forEach((admin) =>
+        emitirEventoNotificacao(admin.userId, { motivo: 'solicitacao_trilha', trailId: trilha.id })
+      );
+
       return res.status(201).json({
         ok: true,
 
@@ -4034,6 +4048,13 @@ app.post(
     `).run(
       requestId, outing.trailId, req.user.id, veiculo.type, veiculo.brand,
       veiculo.model, veiculo.year, veiculo.color, veiculo.plate, veiculo.notes, agora
+    );
+
+    const adminsTrilha = db.prepare(
+      "SELECT user_id AS userId FROM trail_members WHERE trail_id = ? AND role = 'admin' AND status = 'active'"
+    ).all(outing.trailId);
+    adminsTrilha.forEach((admin) =>
+      emitirEventoNotificacao(admin.userId, { motivo: 'solicitacao_trilha', trailId: outing.trailId })
     );
 
     return res.status(201).json({
@@ -4234,6 +4255,12 @@ app.post(
         );
 
 
+        emitirEventoNotificacao(solicitacao.user_id, {
+          motivo: 'solicitacao_trilha_analisada',
+          trailId: trilhaId,
+          status: 'rejected',
+        });
+
         return res.json({
           ok: true,
           message:
@@ -4272,6 +4299,12 @@ app.post(
         `).run(agora, req.user.id, trilhaId, solicitacao.user_id, requestId);
       });
       aceitarSolicitacao();
+
+      emitirEventoNotificacao(solicitacao.user_id, {
+        motivo: 'solicitacao_trilha_analisada',
+        trailId: trilhaId,
+        status: 'accepted',
+      });
 
 
       return res.json({
