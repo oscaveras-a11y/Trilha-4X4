@@ -940,3 +940,16 @@ body.safety-page .reason-button:hover,body.safety-page .reason-button.selected{b
  .module-topbar{margin:0 -3.2% 16px;border-radius:0 0 20px 20px;padding:16px 4%;}
  .module-topbar h1{font-size:28px}
 }
+
+/* Controles superiores da home */
+.hero-actions button{position:relative;cursor:pointer;}
+.notification-dot{position:absolute;right:3px;top:2px;width:11px;height:11px;border-radius:50%;background:#ff3b3b;border:2px solid #101712;}
+.floating-top-panel{
+ position:fixed;z-index:10020;right:max(4%,calc((100vw - 1020px)/2));top:92px;width:min(360px,92vw);
+ padding:18px;border:1px solid rgba(255,255,255,.14);border-radius:18px;
+ background:rgba(13,21,15,.98);color:#f4f7f4;box-shadow:0 20px 55px rgba(0,0,0,.5);backdrop-filter:blur(16px);
+}
+.floating-panel-title{display:flex;justify-content:space-between;align-items:center;font-size:18px;}
+.floating-panel-title button{border:0;background:transparent;color:#fff;font-size:27px;cursor:pointer;}
+.floating-top-panel p{color:#aeb7b0;font-size:14px;}
+.notification-empty{padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#111a13;color:#aeb7b0;}
