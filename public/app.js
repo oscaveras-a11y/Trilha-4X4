@@ -1466,115 +1466,99 @@ async function abrirDetalhesGrupo(groupId) {
 }
 
 async function abrirGrupos() {
+  const destino = document.getElementById('conteudoModulo');
+  if (!destino) return;
+
+  destino.innerHTML = '<div class="module-loading">Carregando seus grupos...</div>';
+
   try {
     const resposta = await fetch('/api/grupos', { cache: 'no-store' });
     const dados = await resposta.json();
 
-    if (!resposta.ok) {
-      alert(dados.error || 'Não foi possível carregar os grupos.');
+    if (resposta.status === 401) {
+      destino.innerHTML = '<div class="module-empty"><h2>👥 Grupos</h2><p>Entre na sua conta para ver, criar ou participar de grupos.</p><button type="button" id="loginGrupos">Entrar</button></div>';
+      document.getElementById('loginGrupos')?.addEventListener('click', () => { window.location.href = '/auth.html'; });
       return;
     }
+    if (!resposta.ok) throw new Error(dados.error || 'Não foi possível carregar os grupos.');
 
-    const overlay = document.createElement('div');
-    overlay.dataset.gruposOverlay = '1';
-    overlay.style.cssText = `
-      position:fixed;inset:0;background:rgba(0,0,0,0.72);
-      display:flex;align-items:center;justify-content:center;
-      z-index:99999;padding:20px;box-sizing:border-box;
-    `;
     const grupos = Array.isArray(dados.groups) ? dados.groups : [];
+    destino.innerHTML = `
+      <section class="groups-page">
+        <div class="groups-actions">
+          <div><h2>👥 Meus grupos</h2><p>Organize seus amigos, rolês e trilhas.</p></div>
+          <button type="button" id="mostrarCriarGrupo">＋ Criar grupo</button>
+        </div>
 
-    overlay.innerHTML = `
-      <div style="background:#151c17;color:#f5f7f5;border:1px solid rgba(255,255,255,.11);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px;padding:24px;box-sizing:border-box;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h2 style="margin:0;">👥 Meus grupos</h2>
-          <button id="fecharGrupos" type="button" style="border:0;background:#252e27;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;">✕</button>
+        <div id="formCriarGrupo" class="groups-inline-form" hidden>
+          <input id="nomeNovoGrupo" maxlength="80" placeholder="Nome do grupo">
+          <button id="criarNovoGrupo" type="button">Criar</button>
         </div>
-        <div style="margin:18px 0;">
+
+        <div class="groups-join">
+          <h3>Entrar com convite</h3>
+          <div class="groups-inline-form">
+            <input id="codigoConviteGrupo" placeholder="Código G4X4-..." autocomplete="off">
+            <button id="entrarGrupoCodigo" type="button">Entrar</button>
+          </div>
+        </div>
+
+        <div class="groups-list">
           ${grupos.length ? grupos.map((grupo) => `
-            <div style="border:1px solid rgba(255,255,255,.11);border-radius:12px;padding:14px;margin-bottom:10px;">
-              <strong>${escaparTextoTrilha(grupo.name)}</strong><br>
-              ${grupo.memberCount} participante(s) · ${escaparTextoTrilha(grupo.role)}
-              <button
-                type="button"
-                onclick="abrirDetalhesGrupo('${grupo.id}')"
-                style="display:block;margin-top:10px;padding:9px 12px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;font-weight:bold;"
-              >Abrir grupo →</button>
-              ${grupo.role === 'admin' ? `
-                <button
-                  type="button"
-                  onclick="editarGrupo('${grupo.id}', decodeURIComponent('${encodeURIComponent(grupo.name)}'))"
-                  style="display:block;margin-top:10px;padding:9px 12px;border:1px solid #222;border-radius:8px;background:#202821;color:#fff;cursor:pointer;font-weight:bold;"
-                >✏️ Editar grupo</button>
-              ` : ''}
-            </div>
-          `).join('') : '<p>Você ainda não participa de grupos.</p>'}
+            <article class="group-card">
+              <div>
+                <strong>${escaparTextoTrilha(grupo.name)}</strong>
+                <small>${Number(grupo.memberCount) || 0} participante(s) · ${grupo.role === 'admin' ? 'Administrador' : 'Membro'}</small>
+              </div>
+              <div class="group-card-actions">
+                <button type="button" data-open-group="${escaparTextoTrilha(grupo.id)}">Abrir grupo →</button>
+                ${grupo.role === 'admin' ? `<button type="button" data-edit-group="${escaparTextoTrilha(grupo.id)}" data-group-name="${encodeURIComponent(grupo.name)}">✏️ Editar</button>` : ''}
+              </div>
+            </article>
+          `).join('') : '<div class="module-empty"><p>Você ainda não participa de nenhum grupo.</p><small>Crie um grupo ou use um código de convite para começar.</small></div>'}
         </div>
-        <h3>Entrar em um grupo</h3>
-        <div style="display:flex;gap:8px;margin-bottom:22px;">
-          <input id="codigoConviteGrupo" placeholder="Código G4X4-..." style="flex:1;padding:11px;text-transform:uppercase;">
-          <button id="entrarGrupoCodigo" type="button" style="padding:11px 14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;">Entrar</button>
-        </div>
-        <h3>Criar grupo</h3>
-        <div style="display:flex;gap:8px;">
-          <input id="nomeNovoGrupo" placeholder="Nome do grupo" style="flex:1;padding:11px;">
-          <button id="criarNovoGrupo" type="button" style="padding:11px 14px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer;">Criar</button>
-        </div>
-      </div>
+      </section>
     `;
 
-    if (!anexarPainelAoModulo(overlay)) {
-    document.body.appendChild(overlay);
-  }
-    document.getElementById('fecharGrupos').addEventListener('click', () => {
-      overlay.remove();
-      history.pushState({}, '', '/');
-      mostrarHome();
+    document.getElementById('mostrarCriarGrupo')?.addEventListener('click', () => {
+      const form = document.getElementById('formCriarGrupo');
+      if (form) form.hidden = !form.hidden;
     });
-    document.getElementById('entrarGrupoCodigo').addEventListener('click', async () => {
-      const code = document.getElementById('codigoConviteGrupo').value.trim().toUpperCase();
-      if (!code) {
-        alert('Informe o código de convite.');
-        return;
-      }
+
+    destino.querySelectorAll('[data-open-group]').forEach((botao) => {
+      botao.addEventListener('click', () => abrirDetalhesGrupo(botao.dataset.openGroup));
+    });
+    destino.querySelectorAll('[data-edit-group]').forEach((botao) => {
+      botao.addEventListener('click', () => editarGrupo(botao.dataset.editGroup, decodeURIComponent(botao.dataset.groupName || '')));
+    });
+
+    document.getElementById('entrarGrupoCodigo')?.addEventListener('click', async () => {
+      const input = document.getElementById('codigoConviteGrupo');
+      const code = input?.value.trim().toUpperCase();
+      if (!code) return alert('Informe o código de convite.');
       const entrar = await fetch('/api/grupos/entrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code })
       });
       const resultado = await entrar.json();
-      if (!entrar.ok) {
-        alert(resultado.error || 'Não foi possível entrar no grupo.');
-        return;
-      }
-      overlay.remove();
+      if (!entrar.ok) return alert(resultado.error || 'Não foi possível entrar no grupo.');
       abrirDetalhesGrupo(resultado.group.id);
     });
-    document.getElementById('criarNovoGrupo').addEventListener('click', async () => {
-      const name = document.getElementById('nomeNovoGrupo').value.trim();
-      if (!name) {
-        alert('Informe o nome do grupo.');
-        return;
-      }
 
+    document.getElementById('criarNovoGrupo')?.addEventListener('click', async () => {
+      const input = document.getElementById('nomeNovoGrupo');
+      const name = input?.value.trim();
+      if (!name) return alert('Informe o nome do grupo.');
       const criar = await fetch('/api/grupos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name })
       });
       const resultado = await criar.json();
-
-      if (!criar.ok) {
-        alert(resultado.error || 'Não foi possível criar o grupo.');
-        return;
-      }
-
-      overlay.remove();
-      abrirGrupos();
+      if (!criar.ok) return alert(resultado.error || 'Não foi possível criar o grupo.');
+      await abrirGrupos();
     });
   } catch (error) {
     console.error('Erro ao carregar grupos:', error);
-    alert('Não foi possível conectar ao servidor.');
+    destino.innerHTML = `<div class="module-empty"><h2>Não foi possível carregar os grupos</h2><p>${escaparHtml(error.message || 'Erro de conexão.')}</p><button type="button" id="tentarGruposNovamente">Tentar novamente</button></div>`;
+    document.getElementById('tentarGruposNovamente')?.addEventListener('click', abrirGrupos);
   }
 }
 
