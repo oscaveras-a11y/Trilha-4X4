@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v40';
+const CACHE_NAME = 'trilha-4x4-v41';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -10,9 +10,11 @@ const APP_SHELL = [
   '/modules/trail-offline.js',
   '/modules/trail-sos.js',
   '/modules/trail-mode.js',
+  '/modules/route-recorder.js',
   '/style.css',
   '/segurança.html',
   '/trilha.html',
+  '/criar-rota.html',
   '/auth.html',
   '/manifest.webmanifest',
   '/icon.svg',
