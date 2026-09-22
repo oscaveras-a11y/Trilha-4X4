@@ -8,3 +8,12 @@ npm-debug.log*
 data/*.db
 data/*.db-wal
 data/*.db-shm
+
+# Capacitor / IDEs nativas
+android/.gradle/
+android/local.properties
+android/**/build/
+ios/App/Pods/
+ios/App/DerivedData/
+*.xcworkspace/xcuserdata/
+.idea/
