@@ -1192,3 +1192,26 @@ body.safety-page main{
     bottom: max(8px, var(--mobile-safe-bottom));
   }
 }
+
+
+/* Grupos — conteúdo embutido e sempre visível no módulo */
+.groups-page{display:grid;gap:18px;width:100%}
+.groups-actions,.groups-join,.group-card,.module-empty,.module-loading{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px}
+.groups-actions{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.groups-actions h2,.groups-join h3{margin:0 0 5px}
+.groups-actions p,.module-empty p{margin:0;color:var(--text-secondary)}
+.groups-inline-form{display:flex;gap:10px}
+.groups-inline-form[hidden]{display:none}
+.groups-inline-form input{flex:1;min-width:0;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.groups-inline-form button,.groups-actions button,.group-card-actions button,.module-empty button{padding:11px 14px;border:0;border-radius:12px;cursor:pointer;font-weight:700}
+.groups-list{display:grid;gap:12px}
+.group-card{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.group-card strong,.group-card small{display:block}
+.group-card small{margin-top:5px;color:var(--text-secondary)}
+.group-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.module-loading{text-align:center;color:var(--text-secondary)}
+@media(max-width:650px){
+  .groups-actions,.group-card{align-items:stretch;flex-direction:column}
+  .groups-inline-form{flex-direction:column}
+  .group-card-actions button{flex:1}
+}
