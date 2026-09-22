@@ -449,20 +449,36 @@ let trilhaId = null;
       }
     }
 
-    rotaPlanejadaPontos.forEach((ponto, index) => {
-      const el = document.createElement('div');
-      el.className = 'rota-numero';
-      el.textContent = String(index + 1);
-      const titulo = index === 0 ? '🚩 Saída'
-        : index === rotaPlanejadaPontos.length - 1 ? '🏁 Chegada'
-        : '📍 Ponto ' + (index + 1);
-
-      const marcador = new maplibregl.Marker({ element: el, draggable: editandoRota })
-        .setLngLat([ponto.longitude, ponto.latitude])
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(titulo))
-        .addTo(mapa);
-
-      if (editandoRota) {
+    // Na navegação, os pontos intermediários ficam ocultos para não poluir o mapa.
+    // A geometria completa continua na linha laranja; mostramos apenas partida e chegada.
+    if (!editandoRota && rotaPlanejadaPontos.length >= 2) {
+      const extremos = [
+        { ponto: rotaPlanejadaPontos[0], simbolo: '🏳️', titulo: 'Partida' },
+        { ponto: rotaPlanejadaPontos[rotaPlanejadaPontos.length - 1], simbolo: '🏁', titulo: 'Chegada' }
+      ];
+      extremos.forEach(({ ponto, simbolo, titulo }) => {
+        const el = document.createElement('div');
+        el.className = 'rota-extremo';
+        el.textContent = simbolo;
+        el.style.cssText = 'font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.65))';
+        const marcador = new maplibregl.Marker({ element: el })
+          .setLngLat([ponto.longitude, ponto.latitude])
+          .setPopup(new maplibregl.Popup({ offset: 20 }).setText(titulo))
+          .addTo(mapa);
+        marcadoresRotaPlanejada.push(marcador);
+      });
+    } else if (editandoRota) {
+      rotaPlanejadaPontos.forEach((ponto, index) => {
+        const el = document.createElement('div');
+        el.className = 'rota-numero';
+        el.textContent = String(index + 1);
+        const titulo = index === 0 ? '🏳️ Partida'
+          : index === rotaPlanejadaPontos.length - 1 ? '🏁 Chegada'
+          : '📍 Ponto ' + (index + 1);
+        const marcador = new maplibregl.Marker({ element: el, draggable: true })
+          .setLngLat([ponto.longitude, ponto.latitude])
+          .setPopup(new maplibregl.Popup({ offset: 20 }).setText(titulo))
+          .addTo(mapa);
         marcador.on('dragend', () => {
           const pos = marcador.getLngLat();
           rotaPlanejadaPontos[index] = { latitude: pos.lat, longitude: pos.lng };
@@ -475,9 +491,9 @@ let trilhaId = null;
             desenharRotaPlanejada();
           }
         });
-      }
-      marcadoresRotaPlanejada.push(marcador);
-    });
+        marcadoresRotaPlanejada.push(marcador);
+      });
+    }
 
     // Não reenquadrar a rota inteira enquanto o GPS está acompanhando o veículo.
     // Isso evita que fitBounds() dispute o centro do mapa com a posição em movimento.
