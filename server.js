@@ -373,6 +373,13 @@ app.get('/', (_req, res) => {
   );
 });
 
+app.get(['/health', '/api/health'], (_req, res) => {
+  res.json({
+    ok: true,
+    status: 'healthy',
+  });
+});
+
 
 app.get(
   '/segurança.html',
