@@ -32,6 +32,7 @@ let trilhaId = null;
   let rotaGpsPausada = false;
   let watchRotaGpsId = null;
   let mapaCarregado = false;
+  let ultimaCentralizacaoGps = 0;
   const trilhasGeoJson = new Map();
 
 
@@ -472,7 +473,11 @@ let trilhaId = null;
       marcadoresRotaPlanejada.push(marcador);
     });
 
-    if (coordenadas.length >= 2 && !editandoRota) centralizarRotaPlanejada();
+    // Não reenquadrar a rota inteira enquanto o GPS está acompanhando o veículo.
+    // Isso evita que fitBounds() dispute o centro do mapa com a posição em movimento.
+    if (coordenadas.length >= 2 && !editandoRota && !gravandoRotaGps && !modoTrilhaAtivo) {
+      centralizarRotaPlanejada();
+    }
   }
 
   function inserirPontoNaLinhaPlanejada(evento) {
@@ -1359,6 +1364,27 @@ let trilhaId = null;
         .addTo(mapa);
     } else {
       marcadorUsuario.setLngLat([longitude, latitude]);
+    }
+
+    // Em Modo Trilha ou durante a gravação de uma rota, o mapa acompanha
+    // continuamente o veículo. A rota permanece desenhada como referência.
+    if ((modoTrilhaAtivo || gravandoRotaGps) && mapaCarregado) {
+      const agora = Date.now();
+      if (agora - ultimaCentralizacaoGps >= 800) {
+        ultimaCentralizacaoGps = agora;
+        const zoomAtual = mapa.getZoom();
+        const opcoes = {
+          center: [longitude, latitude],
+          zoom: Math.max(zoomAtual, 16),
+          duration: 650,
+          essential: true
+        };
+        const heading = Number(position.coords.heading);
+        if (Number.isFinite(heading) && heading >= 0 && position.coords.speed > 1) {
+          opcoes.bearing = heading;
+        }
+        mapa.easeTo(opcoes);
+      }
     }
 
     if (mapaCarregado) {
