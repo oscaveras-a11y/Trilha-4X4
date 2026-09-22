@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v35';
+const CACHE_NAME = 'trilha-4x4-v36';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   '/modules/map-safety.js',
   '/modules/groups.js',
   '/modules/trails.js',
+  '/modules/trail-mode.js',
   '/style.css',
   '/segurança.html',
   '/trilha.html',
