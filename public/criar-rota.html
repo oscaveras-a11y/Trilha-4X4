@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07100c">
+<title>Criar rota · Trilha 4X4</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07100c;color:#f4f7f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(7,16,12,.96);padding:calc(12px + env(safe-area-inset-top)) 14px 12px;border-bottom:1px solid #23372c}
+.topo{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.voltar{border:1px solid #2d6848;background:#123027;color:#fff;border-radius:12px;padding:10px 14px;font-weight:700}
+main{max-width:1100px;margin:auto;padding:14px 14px calc(24px + env(safe-area-inset-bottom))}
+h1{font-size:22px;margin:4px 0}.sub{color:#aebbb3;margin:4px 0 12px}.status{padding:11px 13px;border:1px solid #294438;background:#102019;border-radius:12px;margin-bottom:12px}
+#mapa{height:58vh;min-height:390px;border:1px solid #365648;border-radius:18px;overflow:hidden}
+.controles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+button.acao{min-height:58px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17251e;color:#fff;font-weight:800;padding:12px;cursor:pointer}
+#iniciarButton,#continuarButton{background:#087b36;border-color:#35df78}#finalizarButton{background:#b86a0b;border-color:#e9a23b}#recomecarButton{border-color:#d55;background:#381919}
+.dados{margin-top:10px;color:#aebbb3;font-size:13px}.oculto{display:none!important}
+@media(max-width:600px){#mapa{height:61vh;min-height:360px}.controles{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><div class="topo"><strong>🛣️ Criar rota</strong><button class="voltar" id="voltarButton">← Voltar</button></div></header>
+<main>
+<h1 id="nomeTrilha">Carregando trilha...</h1>
+<p class="sub">Gravação de percurso por GPS, separada do Modo Trilha.</p>
+<div class="status" id="gpsStatus">📍 GPS aguardando início da gravação.</div>
+<div id="mapa"></div>
+<div class="controles">
+<button class="acao" id="iniciarButton">▶ CRIAR ROTA</button>
+<button class="acao oculto" id="pausarButton">⏸ PAUSAR GRAVAÇÃO</button>
+<button class="acao oculto" id="continuarButton">▶ CONTINUAR GRAVAÇÃO</button>
+<button class="acao oculto" id="finalizarButton">🏁 FINALIZAR GRAVAÇÃO</button>
+<button class="acao" id="recomecarButton">🔄 RECOMEÇAR ROTA</button>
+</div>
+<div class="dados" id="dadosRota">0 pontos registrados.</div>
+</main>
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="/modules/route-recorder.js"></script>
+</body></html>
