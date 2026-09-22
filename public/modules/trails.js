@@ -400,7 +400,7 @@ Você é o administrador desta trilha.`
 
         if (dados.trail?.id) {
           window.location.href =
-            '/trilha.html?id=' +
+            '/criar-rota.html?id=' +
             encodeURIComponent(dados.trail.id);
         }
       } catch (error) {
@@ -447,7 +447,8 @@ function abrirTrilha(trilhaId) {
         <button type="button" id="fecharTrilhaSelecionada" aria-label="Fechar" style="border:0;background:#252e27;color:#fff;border-radius:10px;padding:8px 12px;font-size:18px;cursor:pointer;">✕</button>
       </div>
 
-      <button type="button" id="abrirNavegacaoTrilha" style="width:100%;margin-top:22px;padding:20px;text-align:left;border:1px solid rgba(105,211,55,.35);border-radius:16px;background:#17231a;color:#fff;cursor:pointer;">
+      ${trilha && trilha.role === 'admin' ? `<button type="button" id="abrirCriarRotaTrilha" style="width:100%;margin-top:22px;padding:20px;text-align:left;border:1px solid rgba(255,166,43,.45);border-radius:16px;background:#2a1d0d;color:#fff;cursor:pointer;"><strong style="display:block;font-size:19px;">🛣️ Criar rota</strong><span style="display:block;margin-top:7px;color:#d7c6ad;line-height:1.45;">Abrir o mapa exclusivo para gravar o percurso pelo GPS →</span></button>` : ''}
+      <button type="button" id="abrirNavegacaoTrilha" style="width:100%;margin-top:12px;padding:20px;text-align:left;border:1px solid rgba(105,211,55,.35);border-radius:16px;background:#17231a;color:#fff;cursor:pointer;">
         <strong style="display:block;font-size:19px;">🧭 Navegação</strong>
         <span style="display:block;margin-top:7px;color:#b7c0b9;line-height:1.45;">Abrir mapa, rota da trilha, GPS e localização dos participantes →</span>
       </button>
@@ -462,6 +463,9 @@ function abrirTrilha(trilhaId) {
   };
 
   document.getElementById('fecharTrilhaSelecionada').addEventListener('click', fechar);
+  document.getElementById('abrirCriarRotaTrilha')?.addEventListener('click', () => {
+    window.location.href = '/criar-rota.html?id=' + encodeURIComponent(trilhaId);
+  });
   document.getElementById('abrirNavegacaoTrilha').addEventListener('click', () => {
     window.location.href = '/trilha.html?id=' + encodeURIComponent(trilhaId);
   });
