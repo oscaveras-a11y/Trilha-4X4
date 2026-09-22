@@ -720,93 +720,26 @@ let trilhaId = null;
 
   function configurarEditorRota() {
     const editor = document.getElementById('editorRota');
+    if (editor) editor.style.display = 'none';
 
-    if (!trilha || trilha.role !== 'admin') {
-      editor.style.display = 'none';
-      return;
+    const proximoPasso = document.getElementById('rotaProximoPasso');
+    if (proximoPasso) {
+      proximoPasso.style.display =
+        trilha && trilha.role === 'admin' && rotaPlanejadaPontos.length < 2
+          ? 'block'
+          : 'none';
     }
 
-    editor.style.display = 'block';
-
-    document.getElementById('criarRotaMapaButton').onclick = () => {
-      if (!editandoRota) document.getElementById('editarRotaButton').click();
-      document.getElementById('mapa').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const abrirCriador = () => {
+      window.location.href = '/criar-rota.html?id=' + encodeURIComponent(trilhaId);
     };
-    document.getElementById('criarRotaGpsAtalhoButton').onclick = iniciarGravacaoRotaGps;
-
-    document.getElementById('gravarRotaGpsButton').onclick = iniciarGravacaoRotaGps;
-    document.getElementById('pausarRotaGpsButton').onclick = alternarPausaRotaGps;
-    document.getElementById('finalizarRotaGpsButton').onclick = finalizarGravacaoRotaGps;
-    atualizarBotoesGravacaoRota();
-
-    document.getElementById('editarRotaButton').onclick = () => {
-      editandoRota = !editandoRota;
-      document.getElementById('editarRotaButton').textContent =
-        editandoRota ? '⏹ PARAR DE ADICIONAR PONTOS' : '✏️ CRIAR / EDITAR ROTA';
-
-      mapa.getContainer().style.cursor = editandoRota ? 'crosshair' : '';
-      desenharRotaPlanejada();
-
-      ['desfazerRotaButton', 'salvarRotaButton', 'limparRotaButton']
-        .forEach((id) => {
-          document.getElementById(id).style.display = editandoRota ? 'block' : 'none';
-        });
-    };
-
-    document.getElementById('desfazerRotaButton').onclick = () => {
-      rotaPlanejadaPontos.pop();
-      desenharRotaPlanejada();
-    };
-
-    document.getElementById('limparRotaButton').onclick = async () => {
-      if (!confirm('Apagar toda a rota planejada?')) {
-        return;
-      }
-
-      const resposta = await fetch(
-        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/rota-planejada',
-        { method: 'DELETE' }
-      );
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        alert(dados.error || 'Não foi possível apagar a rota.');
-        return;
-      }
-
-      rotaPlanejadaPontos = [];
-      desenharRotaPlanejada();
-      document.getElementById('rotaPlanejadaStatus').textContent =
-        'O administrador ainda não criou uma rota para esta trilha.';
-    };
-
-    document.getElementById('salvarRotaButton').onclick = async () => {
-      if (rotaPlanejadaPontos.length < 2) {
-        alert('Adicione pelo menos o ponto de saída e o ponto de chegada.');
-        return;
-      }
-
-      const resposta = await fetch(
-        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/rota-planejada',
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ points: rotaPlanejadaPontos }),
-        }
-      );
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        alert(dados.error || 'Não foi possível salvar a rota.');
-        return;
-      }
-
-      alert('✅ Rota salva com sucesso.');
-      document.getElementById('rotaPlanejadaStatus').textContent =
-        `🗺️ Rota planejada salva com ${rotaPlanejadaPontos.length} pontos.`;
-    };
+    const mapaButton = document.getElementById('criarRotaMapaButton');
+    const gpsButton = document.getElementById('criarRotaGpsAtalhoButton');
+    if (mapaButton) {
+      mapaButton.textContent = '🛣️ ABRIR CRIADOR DE ROTA';
+      mapaButton.onclick = abrirCriador;
+    }
+    if (gpsButton) gpsButton.style.display = 'none';
   }
 
   function adicionarPontoPlanejadoNoMapa(evento) {
