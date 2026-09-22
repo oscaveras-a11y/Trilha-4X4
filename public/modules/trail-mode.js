@@ -33,6 +33,11 @@ let trilhaId = null;
   let watchRotaGpsId = null;
   let mapaCarregado = false;
   let ultimaCentralizacaoGps = 0;
+  let ultimaPosicaoGpsAceita = null;
+  let ultimoEnvioGpsEm = 0;
+  const GPS_MAX_ACCURACY_METERS = 80;
+  const GPS_MAX_SPEED_MPS = 70;
+  const GPS_QUEUE_KEY = 'trilha4x4-gps-pendente-v1';
   const trilhasGeoJson = new Map();
 
 
@@ -570,6 +575,12 @@ let trilhaId = null;
   function registrarPontoRotaGps(position) {
     if (!gravandoRotaGps || rotaGpsPausada) return;
 
+    const validacao = validarPosicaoGps(position);
+    if (!validacao.ok) {
+      atualizarStatusGps('⚠️ ' + validacao.motivo);
+      return;
+    }
+    atualizarStatusGps('📡 GPS ativo · precisão ' + Math.round(position.coords.accuracy) + ' m', 'ativo');
     atualizarMapaUsuario(position);
 
     const latitude = position.coords.latitude;
@@ -1140,6 +1151,108 @@ let trilhaId = null;
   }
 
 
+  function atualizarStatusGps(texto, tipo = '') {
+    const status = document.getElementById('gpsStatus');
+    if (!status) return;
+    status.textContent = texto;
+    status.className = 'status' + (tipo ? ' ' + tipo : '');
+  }
+
+  function distanciaGpsMetros(a, b) {
+    if (!a || !b) return 0;
+    const rad = Math.PI / 180;
+    const lat1 = a.latitude * rad, lat2 = b.latitude * rad;
+    const dLat = (b.latitude - a.latitude) * rad;
+    const dLon = (b.longitude - a.longitude) * rad;
+    const h = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
+  function validarPosicaoGps(position) {
+    const coords = position?.coords;
+    if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
+      return { ok: false, motivo: 'Posição GPS inválida.' };
+    }
+    const accuracy = Number(coords.accuracy);
+    if (!Number.isFinite(accuracy) || accuracy > GPS_MAX_ACCURACY_METERS) {
+      return { ok: false, motivo: 'GPS com baixa precisão (' + Math.round(accuracy || 0) + ' m).' };
+    }
+    const atual = {
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      timestamp: Number(position.timestamp) || Date.now()
+    };
+    if (ultimaPosicaoGpsAceita) {
+      const dt = Math.max(0.1, (atual.timestamp - ultimaPosicaoGpsAceita.timestamp) / 1000);
+      const distancia = distanciaGpsMetros(ultimaPosicaoGpsAceita, atual);
+      const velocidadeCalculada = distancia / dt;
+      const velocidadeSensor = Number(coords.speed);
+      if (distancia > 100 && velocidadeCalculada > GPS_MAX_SPEED_MPS &&
+          (!Number.isFinite(velocidadeSensor) || velocidadeSensor < GPS_MAX_SPEED_MPS)) {
+        return { ok: false, motivo: 'Salto de GPS ignorado.' };
+      }
+    }
+    ultimaPosicaoGpsAceita = atual;
+    return { ok: true };
+  }
+
+  function lerFilaGps() {
+    try {
+      const fila = JSON.parse(localStorage.getItem(GPS_QUEUE_KEY) || '[]');
+      return Array.isArray(fila) ? fila : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function salvarFilaGps(fila) {
+    try {
+      localStorage.setItem(GPS_QUEUE_KEY, JSON.stringify(fila.slice(-500)));
+    } catch (erro) {
+      console.warn('Não foi possível persistir a fila GPS:', erro);
+    }
+  }
+
+  function enfileirarGps(payload) {
+    const fila = lerFilaGps();
+    fila.push({ trilhaId, payload, createdAt: new Date().toISOString() });
+    salvarFilaGps(fila);
+    atualizarStatusGps('📴 Offline · posição salva no aparelho (' + fila.length + ' pendente' + (fila.length === 1 ? '' : 's') + ').');
+  }
+
+  async function sincronizarFilaGps() {
+    if (!navigator.onLine) return;
+    const fila = lerFilaGps();
+    if (!fila.length) return;
+    atualizarStatusGps('🔄 Sincronizando ' + fila.length + ' posição' + (fila.length === 1 ? '' : 'ões') + '…');
+    const restantes = [];
+    for (const item of fila) {
+      try {
+        const resposta = await fetch('/api/trilhas/' + encodeURIComponent(item.trilhaId) + '/localizacao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item.payload)
+        });
+        if (!resposta.ok) restantes.push(item);
+      } catch (_) {
+        restantes.push(item);
+      }
+    }
+    salvarFilaGps(restantes);
+    atualizarStatusGps(restantes.length
+      ? '📴 Ainda há ' + restantes.length + ' posição' + (restantes.length === 1 ? '' : 'ões') + ' aguardando conexão.'
+      : '✅ GPS sincronizado.', restantes.length ? '' : 'ativo');
+  }
+
+  window.addEventListener('online', () => {
+    atualizarStatusGps('🌐 Internet voltou · sincronizando GPS…');
+    sincronizarFilaGps();
+  });
+  window.addEventListener('offline', () => {
+    atualizarStatusGps('📴 Sem internet · o GPS continuará sendo registrado no aparelho.');
+  });
+
   /*
    * INICIAR MODO TRILHA
    */
@@ -1158,6 +1271,8 @@ let trilhaId = null;
 
     modoTrilhaAtivo =
       true;
+    ultimaPosicaoGpsAceita = null;
+    sincronizarFilaGps();
 
 
     const botao =
@@ -1416,15 +1531,38 @@ let trilhaId = null;
       return;
     }
 
+    const validacao = validarPosicaoGps(position);
+    if (!validacao.ok) {
+      atualizarStatusGps('⚠️ ' + validacao.motivo);
+      return;
+    }
+
+    atualizarStatusGps(
+      (navigator.onLine ? '📡 GPS ativo' : '📴 GPS ativo sem internet') +
+      ' · precisão ' + Math.round(position.coords.accuracy) + ' m',
+      navigator.onLine ? 'ativo' : ''
+    );
 
     atualizarMapaUsuario(
       position
     );
 
+    const payloadGps = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      timestamp: Number(position.timestamp) || Date.now()
+    };
+    ultimoEnvioGpsEm = Date.now();
+
+    if (!navigator.onLine) {
+      enfileirarGps(payloadGps);
+      return;
+    }
 
     try {
 
-      await fetch(
+      const respostaGps = await fetch(
         '/api/trilhas/' +
         encodeURIComponent(
           trilhaId
@@ -1438,21 +1576,14 @@ let trilhaId = null;
               'application/json'
           },
 
-          body:
-            JSON.stringify({
-
-              latitude:
-                position.coords.latitude,
-
-              longitude:
-                position.coords.longitude,
-
-              accuracy:
-                position.coords.accuracy
-
-            })
+          body: JSON.stringify(payloadGps)
         }
       );
+
+      if (!respostaGps.ok) {
+        throw new Error('HTTP ' + respostaGps.status);
+      }
+      sincronizarFilaGps();
 
     } catch (erro) {
 
@@ -1460,6 +1591,7 @@ let trilhaId = null;
         'Erro ao enviar localização:',
         erro
       );
+      enfileirarGps(payloadGps);
 
     }
 
@@ -1640,8 +1772,15 @@ let trilhaId = null;
     );
 
 
+    const mensagens = {
+      1: 'Permissão de localização negada.',
+      2: 'Sinal de GPS indisponível.',
+      3: 'GPS demorou para responder.'
+    };
+    atualizarStatusGps('⚠️ ' + (mensagens[error?.code] || 'Não foi possível obter a localização.'));
     mostrarErro(
-      'Não foi possível obter sua localização. Verifique a permissão de GPS do navegador.'
+      (mensagens[error?.code] || 'Não foi possível obter sua localização.') +
+      ' Verifique a permissão e o sinal de GPS.'
     );
 
   }
