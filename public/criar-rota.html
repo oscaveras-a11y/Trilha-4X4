@@ -16,8 +16,8 @@ h1{font-size:22px;margin:4px 0}.sub{color:#aebbb3;margin:4px 0 12px}.status{padd
 .controles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
 button.acao{min-height:58px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17251e;color:#fff;font-weight:800;padding:12px;cursor:pointer}
 #iniciarButton,#continuarButton{background:#087b36;border-color:#35df78}#finalizarButton{background:#b86a0b;border-color:#e9a23b}#recomecarButton{border-color:#d55;background:#381919}
-.dados{margin-top:10px;color:#aebbb3;font-size:13px}.oculto{display:none!important}
-@media(max-width:600px){#mapa{height:61vh;min-height:360px}.controles{grid-template-columns:1fr 1fr}}
+.controles-marcadores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.marcador-rota{min-height:46px;border:1px solid #365648;border-radius:12px;background:#102019;color:#fff;font-weight:800;padding:8px}.marcador-rota.ativo{outline:2px solid #35df78;background:#173426}.dados{margin-top:10px;color:#aebbb3;font-size:13px}.oculto{display:none!important}
+@media(max-width:600px){#mapa{height:61vh;min-height:360px}.controles,.controles-marcadores{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -27,6 +27,12 @@ button.acao{min-height:58px;border:1px solid rgba(255,255,255,.14);border-radius
 <p class="sub">Gravação de percurso por GPS, separada do Modo Trilha.</p>
 <div class="status" id="gpsStatus">📍 GPS aguardando início da gravação.</div>
 <div id="mapa"></div>
+<div class="controles-marcadores" aria-label="Marcadores da rota">
+<button class="marcador-rota" data-tipo="partida">🏳️ PARTIDA</button>
+<button class="marcador-rota" data-tipo="chegada">🏁 CHEGADA</button>
+<button class="marcador-rota" data-tipo="obstaculo">⚠️ OBSTÁCULO</button>
+<button class="marcador-rota" data-tipo="apoio">🔧 APOIO</button>
+</div>
 <div class="controles">
 <button class="acao" id="iniciarButton">▶ CRIAR ROTA</button>
 <button class="acao oculto" id="pausarButton">⏸ PAUSAR GRAVAÇÃO</button>
