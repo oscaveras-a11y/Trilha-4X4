@@ -8,15 +8,24 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check public/app.js && node --check public/script.js && node --check tests/e2e-10-users.js",
-    "test:e2e10": "node tests/e2e-10-users.js"
+    "test:e2e10": "node tests/e2e-10-users.js",
+    "mobile:sync": "cap sync",
+    "mobile:android": "cap open android",
+    "mobile:ios": "cap open ios"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "9router": "^0.5.81",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
     "better-sqlite3": "^13.0.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
   }
 }
