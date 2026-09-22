@@ -1930,6 +1930,83 @@
 
 
   /*
+   * SEGURANÇA DA TRILHA
+   */
+
+  async function carregarSeguranca() {
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/seguranca',
+        { cache: 'no-store' }
+      );
+
+      if (!resposta.ok) return;
+
+      const dados = await resposta.json();
+      const ultimo = dados.events?.[0];
+      const status = document.getElementById('segurancaStatus');
+
+      if (ultimo && status) {
+        status.textContent =
+          `${ultimo.userName} registrou "${ultimo.action}" em ${dataBR(ultimo.createdAt)}.`;
+      }
+    } catch (erro) {
+      console.warn('Status de segurança indisponível:', erro);
+    }
+  }
+
+  async function registrarSeguranca(action, extensionHours = null) {
+    if (action === 'safe' && !confirm('Confirmar que você chegou em segurança?')) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        '/api/trilhas/' + encodeURIComponent(trilhaId) + '/seguranca',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, extensionHours }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        mostrarErro(dados.error || 'Não foi possível registrar a segurança.');
+        return;
+      }
+
+      const status = document.getElementById('segurancaStatus');
+      if (status) status.textContent = dados.message;
+      await carregarTrilha();
+    } catch (erro) {
+      console.error(erro);
+      mostrarErro('Não foi possível conectar ao servidor.');
+    }
+  }
+
+  document.getElementById('chegueiButton').addEventListener(
+    'click', () => registrarSeguranca('safe')
+  );
+
+  document.getElementById('aindaTrilhaButton').addEventListener(
+    'click', () => registrarSeguranca('still_on_trail')
+  );
+
+  document.getElementById('estender6Button').addEventListener(
+    'click', () => registrarSeguranca('extend', 6)
+  );
+
+  document.getElementById('estender12Button').addEventListener(
+    'click', () => registrarSeguranca('extend', 12)
+  );
+
+  document.getElementById('estender24Button').addEventListener(
+    'click', () => registrarSeguranca('extend', 24)
+  );
+
+  /*
    * INICIAR MODO TRILHA
    */
 
