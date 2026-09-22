@@ -34,6 +34,7 @@ let trilhaId = null;
   let mapaCarregado = false;
   let ultimaCentralizacaoGps = 0;
   let ultimaPosicaoGpsAceita = null;
+  let ultimaPosicaoRotaGpsAceita = null;
   let ultimoEnvioGpsEm = 0;
   const GPS_MAX_ACCURACY_METERS = 80;
   const GPS_MAX_SPEED_MPS = 70;
@@ -575,7 +576,7 @@ let trilhaId = null;
   function registrarPontoRotaGps(position) {
     if (!gravandoRotaGps || rotaGpsPausada) return;
 
-    const validacao = validarPosicaoGps(position);
+    const validacao = validarPosicaoGps(position, 'rota');
     if (!validacao.ok) {
       atualizarStatusGps('⚠️ ' + validacao.motivo);
       return;
@@ -589,8 +590,8 @@ let trilhaId = null;
 
     if (ultimo) {
       const distancia = mapa.distance(
-        [ultimo.latitude, ultimo.longitude],
-        [latitude, longitude]
+        [ultimo.longitude, ultimo.latitude],
+        [longitude, latitude]
       );
       if (distancia < 5) return;
     }
@@ -624,6 +625,7 @@ let trilhaId = null;
     navigator.geolocation.getCurrentPosition(
       (position) => {
         rotaPlanejadaPontos = [];
+        ultimaPosicaoRotaGpsAceita = null;
         gravandoRotaGps = true;
         rotaGpsPausada = false;
         editandoRota = false;
@@ -1169,7 +1171,7 @@ let trilhaId = null;
     return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
 
-  function validarPosicaoGps(position) {
+  function validarPosicaoGps(position, contexto = 'compartilhamento') {
     const coords = position?.coords;
     if (!coords || !Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
       return { ok: false, motivo: 'Posição GPS inválida.' };
@@ -1183,9 +1185,10 @@ let trilhaId = null;
       longitude: coords.longitude,
       timestamp: Number(position.timestamp) || Date.now()
     };
-    if (ultimaPosicaoGpsAceita) {
-      const dt = Math.max(0.1, (atual.timestamp - ultimaPosicaoGpsAceita.timestamp) / 1000);
-      const distancia = distanciaGpsMetros(ultimaPosicaoGpsAceita, atual);
+    const ultimaPosicao = contexto === 'rota' ? ultimaPosicaoRotaGpsAceita : ultimaPosicaoGpsAceita;
+    if (ultimaPosicao) {
+      const dt = Math.max(0.1, (atual.timestamp - ultimaPosicao.timestamp) / 1000);
+      const distancia = distanciaGpsMetros(ultimaPosicao, atual);
       const velocidadeCalculada = distancia / dt;
       const velocidadeSensor = Number(coords.speed);
       if (distancia > 100 && velocidadeCalculada > GPS_MAX_SPEED_MPS &&
@@ -1193,7 +1196,8 @@ let trilhaId = null;
         return { ok: false, motivo: 'Salto de GPS ignorado.' };
       }
     }
-    ultimaPosicaoGpsAceita = atual;
+    if (contexto === 'rota') ultimaPosicaoRotaGpsAceita = atual;
+    else ultimaPosicaoGpsAceita = atual;
     return { ok: true };
   }
 
