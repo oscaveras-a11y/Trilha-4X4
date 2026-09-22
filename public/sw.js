@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trilha-4x4-v30';
+const CACHE_NAME = 'trilha-4x4-v31';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   '/style.css',
   '/segurança.html',
   '/trilha.html',
+  '/auth.html',
   '/manifest.webmanifest',
   '/icon.svg',
   '/apple-touch-icon.png',
