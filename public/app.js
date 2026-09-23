@@ -562,7 +562,8 @@ function abrirFuncao(page) {
 
 const IA_MEMORY_DB = 'trilha4x4-ia';
 const IA_MEMORY_STORE = 'memorias';
-const IA_MEMORY_MAX = 60;
+const IA_MEMORY_MAX = 30;
+const IA_MEMORY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IA_MEMORY_SENSITIVE = /\\b(senha|password|passwd|token|cookie|api[ _-]?key|chave[ _-]?de[ _-]?api|authorization|bearer|secret|segredo|credencial)\\b/i;
 
 function abrirBancoMemoriaIA() {
@@ -595,20 +596,21 @@ async function listarMemoriasIA(userId, limite = 12) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(IA_MEMORY_STORE, 'readonly');
     const req = tx.objectStore(IA_MEMORY_STORE).index('userId').getAll(userId);
-    req.onsuccess = () => resolve((req.result || []).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limite));
+    req.onsuccess = () => { const agora=Date.now(); resolve((req.result || []).filter(m => !m.expiresAt || Date.parse(m.expiresAt) > agora).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limite)); };
     req.onerror = () => reject(req.error);
   });
 }
 
-async function salvarMemoriaIA(userId, texto, categoria = 'conversa') {
-  const limpo = String(texto || '').trim().slice(0, 600);
+async function salvarMemoriaIA(userId, texto, categoria = 'pergunta') {
+  const limpo = String(texto || '').trim().slice(0, 400);
+  if (!['preferencia','fato_usuario','pergunta'].includes(categoria)) return false;
   if (!userId || !limpo || IA_MEMORY_SENSITIVE.test(limpo)) return false;
   const db = await abrirBancoMemoriaIA();
   const existentes = await listarMemoriasIA(userId, IA_MEMORY_MAX + 20);
   if (existentes.some((m) => m.texto.toLowerCase() === limpo.toLowerCase())) return true;
   await new Promise((resolve, reject) => {
     const tx = db.transaction(IA_MEMORY_STORE, 'readwrite');
-    tx.objectStore(IA_MEMORY_STORE).add({ userId, texto: limpo, categoria, createdAt: new Date().toISOString(), origem: 'dispositivo' });
+    const createdAt = new Date(); tx.objectStore(IA_MEMORY_STORE).add({ userId, texto: limpo, categoria, confianca: categoria === 'pergunta' ? 'baixa' : 'usuario', createdAt: createdAt.toISOString(), expiresAt: new Date(createdAt.getTime()+IA_MEMORY_TTL_MS).toISOString(), origem: 'dispositivo' });
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
@@ -800,7 +802,7 @@ async function abrirIA() {
           context: {
             trailName: document.getElementById('nomeTrilha')?.textContent || 'Trilha 4X4',
             trailStatus: document.getElementById('modoStatus')?.textContent || 'N/A',
-            localMemory: (await listarMemoriasIA(memoryUserId, 8)).map((m) => m.texto),
+            localMemory: (await listarMemoriasIA(memoryUserId, 6)).map((m) => ({ texto: m.texto, categoria: m.categoria })),
           },
         }),
       });
@@ -814,7 +816,6 @@ async function abrirIA() {
       addMensagem(dados.reply || 'Sem resposta', 'bot');
       if (dados.source !== 'safety' && memoryUserId) {
         await salvarMemoriaIA(memoryUserId, mensagem, 'pergunta');
-        if (dados.reply) await salvarMemoriaIA(memoryUserId, dados.reply, 'resposta');
       }
     } catch (erro) {
       addMensagem(erro.message || 'Não foi possível conectar com a IA.', 'bot');
