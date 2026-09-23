@@ -560,13 +560,91 @@ function abrirFuncao(page) {
   }
 }
 
-function abrirIA() {
+const IA_MEMORY_DB = 'trilha4x4-ia';
+const IA_MEMORY_STORE = 'memorias';
+const IA_MEMORY_MAX = 60;
+const IA_MEMORY_SENSITIVE = /\\b(senha|password|passwd|token|cookie|api[ _-]?key|chave[ _-]?de[ _-]?api|authorization|bearer|secret|segredo|credencial)\\b/i;
+
+function abrirBancoMemoriaIA() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IA_MEMORY_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IA_MEMORY_STORE)) {
+        const store = db.createObjectStore(IA_MEMORY_STORE, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('userId', 'userId', { unique: false });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function usuarioMemoriaIA() {
+  try {
+    const r = await fetch('/api/auth/me', { cache: 'no-store' });
+    const d = await r.json();
+    return d.authenticated && d.user?.id ? String(d.user.id) : null;
+  } catch { return null; }
+}
+
+async function listarMemoriasIA(userId, limite = 12) {
+  if (!userId) return [];
+  const db = await abrirBancoMemoriaIA();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IA_MEMORY_STORE, 'readonly');
+    const req = tx.objectStore(IA_MEMORY_STORE).index('userId').getAll(userId);
+    req.onsuccess = () => resolve((req.result || []).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limite));
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function salvarMemoriaIA(userId, texto, categoria = 'conversa') {
+  const limpo = String(texto || '').trim().slice(0, 600);
+  if (!userId || !limpo || IA_MEMORY_SENSITIVE.test(limpo)) return false;
+  const db = await abrirBancoMemoriaIA();
+  const existentes = await listarMemoriasIA(userId, IA_MEMORY_MAX + 20);
+  if (existentes.some((m) => m.texto.toLowerCase() === limpo.toLowerCase())) return true;
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(IA_MEMORY_STORE, 'readwrite');
+    tx.objectStore(IA_MEMORY_STORE).add({ userId, texto: limpo, categoria, createdAt: new Date().toISOString(), origem: 'dispositivo' });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  const todos = await listarMemoriasIA(userId, IA_MEMORY_MAX + 20);
+  if (todos.length > IA_MEMORY_MAX) {
+    const apagar = todos.slice(IA_MEMORY_MAX);
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(IA_MEMORY_STORE, 'readwrite');
+      apagar.forEach((m) => tx.objectStore(IA_MEMORY_STORE).delete(m.id));
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  return true;
+}
+
+async function limparMemoriaIA(userId) {
+  if (!userId) return;
+  const db = await abrirBancoMemoriaIA();
+  const itens = await listarMemoriasIA(userId, IA_MEMORY_MAX + 100);
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(IA_MEMORY_STORE, 'readwrite');
+    itens.forEach((m) => tx.objectStore(IA_MEMORY_STORE).delete(m.id));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function abrirIA() {
   const existente = document.getElementById('iaOverlay');
   if (existente) {
     existente.remove();
     return;
   }
 
+  const memoryUserId = await usuarioMemoriaIA();
   const overlay = document.createElement('div');
   overlay.id = 'iaOverlay';
   overlay.style.position = 'fixed';
@@ -613,7 +691,25 @@ function abrirIA() {
     mostrarHome();
   });
 
+  const limparMemoria = document.createElement('button');
+  limparMemoria.type = 'button';
+  limparMemoria.textContent = 'Limpar memória';
+  limparMemoria.style.marginLeft = 'auto';
+  limparMemoria.style.marginRight = '12px';
+  limparMemoria.style.border = '1px solid #475569';
+  limparMemoria.style.background = 'transparent';
+  limparMemoria.style.color = '#fff';
+  limparMemoria.style.borderRadius = '8px';
+  limparMemoria.style.padding = '6px 9px';
+  limparMemoria.style.cursor = 'pointer';
+  limparMemoria.addEventListener('click', async () => {
+    if (!memoryUserId || !confirm('Apagar a memória local da IA 4X4 deste usuário neste aparelho?')) return;
+    await limparMemoriaIA(memoryUserId);
+    alert('Memória local da IA apagada deste aparelho.');
+  });
+
   topo.appendChild(titulo);
+  topo.appendChild(limparMemoria);
   topo.appendChild(fechar);
 
   const chat = document.createElement('div');
@@ -704,6 +800,7 @@ function abrirIA() {
           context: {
             trailName: document.getElementById('nomeTrilha')?.textContent || 'Trilha 4X4',
             trailStatus: document.getElementById('modoStatus')?.textContent || 'N/A',
+            localMemory: (await listarMemoriasIA(memoryUserId, 8)).map((m) => m.texto),
           },
         }),
       });
@@ -715,6 +812,10 @@ function abrirIA() {
       }
 
       addMensagem(dados.reply || 'Sem resposta', 'bot');
+      if (dados.source !== 'safety' && memoryUserId) {
+        await salvarMemoriaIA(memoryUserId, mensagem, 'pergunta');
+        if (dados.reply) await salvarMemoriaIA(memoryUserId, dados.reply, 'resposta');
+      }
     } catch (erro) {
       addMensagem(erro.message || 'Não foi possível conectar com a IA.', 'bot');
     } finally {
