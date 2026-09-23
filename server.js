@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const db = require('./lib/db');
+const { avaliarEntrada, sanitizarMemoria, sanitizarFonte, validarSaida } = require('./lib/ai-security');
 
 const {
   createId,
@@ -148,22 +149,10 @@ if (!process.env.TAVILY_API_KEY) {
   console.warn('Aviso: TAVILY_API_KEY não definida. A IA funcionará sem pesquisa web.');
 }
 
-const IA4X4_ESCOPO = /\\b(4x4|off.?road|trilha|rota|gps|navega|ve[ií]culo|carro|motor|c[aâ]mbio|diferencial|pneu|guincho|atol|recupera|sos|seguran[cç]a|mec[aâ]nic|prepara|suspens|jeep|s10|troller|suzuki|toyota|mitsubishi|ford|chevrolet|app|grupo|passeio)\\b/i;
-const IA4X4_SEGREDOS = /\\b(senha|password|passwd|token|cookie|api[ _-]?key|chave[ _-]?de[ _-]?api|authorization|bearer|secret|segredo|credencial)\\b/i;
-const IA4X4_INJECAO = /\\b(ignore|ignorar|esque[cç]a|revele|mostre|exiba|imprima|repita).{0,50}\\b(instru[cç][oõ]es|prompt|sistema|system|regras|segredo|token|chave)\\b/i;
-
-function avaliarSegurancaIA(mensagem) {
-  const texto = String(mensagem || '').trim();
-  if (IA4X4_SEGREDOS.test(texto)) {
-    return { ok: false, code: 'sensitive', reply: 'Por segurança, não envio nem armazeno senhas, tokens, cookies, chaves de API ou outras credenciais. Posso ajudar sem usar esses dados.' };
-  }
-  if (IA4X4_INJECAO.test(texto)) {
-    return { ok: false, code: 'prompt-injection', reply: 'Não posso revelar ou substituir as regras internas do assistente. Posso continuar ajudando com o Trilha 4X4, veículos, mecânica, navegação e segurança off-road.' };
-  }
-  if (!IA4X4_ESCOPO.test(texto)) {
-    return { ok: false, code: 'out-of-scope', reply: 'Sou a IA 4X4 do Trilha 4X4. Posso ajudar com o aplicativo, trilhas, navegação, veículos, mecânica, preparação, recuperação e segurança off-road.' };
-  }
-  return { ok: true };
+function respostaSegurancaIA(code) {
+  if (code === 'sensitive') return 'Por segurança, não envio nem armazeno senhas, tokens, cookies, chaves de API ou outras credenciais. Posso ajudar sem usar esses dados.';
+  if (code === 'prompt-injection') return 'Não posso revelar ou substituir as regras internas do assistente. Posso continuar ajudando com o Trilha 4X4, veículos, mecânica, navegação e segurança off-road.';
+  return 'Sou a IA 4X4 do Trilha 4X4. Posso ajudar com o aplicativo, trilhas, navegação, veículos, mecânica, preparação, recuperação e segurança off-road.';
 }
 
 function gerarRespostaLocal(mensagem) {
@@ -207,7 +196,7 @@ async function pesquisarOffRoad(mensagem) {
         title: String(item.title || '').slice(0, 180),
         url: String(item.url || '').slice(0, 1000),
         content: String(item.content || '').slice(0, 1200),
-      }))
+      })).map(sanitizarFonte).filter((item) => item.url)
     : [];
 }
 
@@ -4627,10 +4616,11 @@ app.post('/api/chat', exigirLogin, limitarChat, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Informe uma mensagem.' });
   }
 
-  const seguranca = avaliarSegurancaIA(mensagem);
+  const seguranca = avaliarEntrada(mensagem);
   if (!seguranca.ok) {
-    return res.json({ ok: true, reply: seguranca.reply, source: 'safety', safety: seguranca.code, sources: [] });
+    return res.json({ ok: true, reply: respostaSegurancaIA(seguranca.code), source: 'safety', safety: seguranca.code, sources: [] });
   }
+  const mensagemSegura = seguranca.text;
 
   const usuario = usuarioAtual(req);
   const veiculo = usuario
@@ -4643,13 +4633,7 @@ app.post('/api/chat', exigirLogin, limitarChat, async (req, res) => {
       `).get(usuario.id)
     : null;
   const contexto = req.body?.context || {};
-  const memoriaLocal = Array.isArray(contexto.localMemory)
-    ? contexto.localMemory
-        .filter((item) => typeof item === 'string' && !IA4X4_SEGREDOS.test(item))
-        .slice(0, 8)
-        .map((item) => item.trim().slice(0, 600))
-        .filter(Boolean)
-    : [];
+  const memoriaLocal = sanitizarMemoria(contexto.localMemory);
   const contextoTexto = [
     usuario ? `Usuário: ${usuario.name}.` : '',
     veiculo ? `Veículo: ${veiculo.type} ${veiculo.brand} ${veiculo.model}${veiculo.year ? `, ${veiculo.year}` : ''}.` : '',
@@ -4660,17 +4644,18 @@ app.post('/api/chat', exigirLogin, limitarChat, async (req, res) => {
 
   let fontes = [];
   try {
-    fontes = await pesquisarOffRoad(mensagem);
+    fontes = await pesquisarOffRoad(mensagemSegura);
   } catch (error) {
     console.warn('Pesquisa off-road indisponível:', error.message);
   }
 
   try {
-    const reply = await responderComGroq(mensagem, contextoTexto, fontes);
-    if (reply) {
+    const reply = await responderComGroq(mensagemSegura, contextoTexto, fontes);
+    const saida = reply ? validarSaida(reply) : null;
+    if (saida?.ok) {
       return res.json({
         ok: true,
-        reply,
+        reply: saida.text,
         source: fontes.length ? 'groq+tavily' : 'groq',
         sources: fontes.map(({ title, url }) => ({ title, url })),
       });
@@ -4681,7 +4666,7 @@ app.post('/api/chat', exigirLogin, limitarChat, async (req, res) => {
 
   return res.json({
     ok: true,
-    reply: gerarRespostaLocal(mensagem),
+    reply: gerarRespostaLocal(mensagemSegura),
     source: 'local-fallback',
     sources: fontes.map(({ title, url }) => ({ title, url })),
   });
