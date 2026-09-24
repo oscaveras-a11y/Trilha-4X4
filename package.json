@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check lib/ai-security.js && node --check tests/ai-security.js && node tests/ai-security.js && node --check public/app.js && node --check public/script.js && node --check public/modules/groups.js && node --check public/modules/vehicles.js && node --check public/modules/map-safety.js && node --check public/modules/trails.js && node --check public/modules/trail-offline.js && node --check public/modules/trail-sos.js && node --check public/modules/trail-mode.js && node --check public/modules/route-recorder.js && node --check tests/e2e-10-users.js",
+    "check": "node --check server.js && node --check lib/ai-security.js && node --check lib/ai-knowledge.js && node --check tests/ai-knowledge.js && node tests/ai-knowledge.js && node --check tests/ai-security.js && node tests/ai-security.js && node --check public/app.js && node --check public/script.js && node --check public/modules/groups.js && node --check public/modules/vehicles.js && node --check public/modules/map-safety.js && node --check public/modules/trails.js && node --check public/modules/trail-offline.js && node --check public/modules/trail-sos.js && node --check public/modules/trail-mode.js && node --check public/modules/route-recorder.js && node --check tests/e2e-10-users.js",
     "test:e2e10": "node tests/e2e-10-users.js",
     "mobile:sync": "cap sync",
     "mobile:android": "cap open android",
