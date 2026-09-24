@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "name": "Base de conhecimento IA 4X4 — Off-road",
+  "status": "validada_colaborativamente",
+  "notes": [
+    "Conteúdo consolidado das respostas confirmadas pelo projeto.",
+    "Não tratar números de referência como limites universais; considerar veículo, fabricante, terreno e configuração.",
+    "Quando houver risco ou informação insuficiente, priorizar segurança e reavaliação."
+  ],
+  "entries": [
+    {
+      "id": "offroad-001",
+      "topic": "Atolamento em lama",
+      "status": "CONFIRMADA",
+      "answer": "Evitar patinação excessiva. Usar reduzida/recursos 4x4 adequados, baixa velocidade e torque progressivo. Se estiver efetivamente atolado ou houver risco de quebra, preferir recuperação controlada com guincho ou outro veículo. Usar equipamento corretamente dimensionado e pontos de recuperação adequados; manter pessoas afastadas da linha de recuperação e usar medidas de segurança apropriadas. Movimentar a direção para buscar terreno firme pode ajudar em algumas situações, mas não é regra universal."
+    },
+    {
+      "id": "offroad-002",
+      "topic": "Subida íngreme e escorregadia",
+      "status": "CONFIRMADA",
+      "answer": "Priorizar controle e margem de segurança. Usar reduzida quando apropriado, evitar velocidade excessiva e também perder totalmente o progresso por falta de movimento. Evitar movimentos desnecessários de direção. Se todas as rodas começarem a patinar, modular o acelerador; se não houver progresso seguro, recuar de forma controlada, reavaliar e, se apropriado, tentar novamente com abordagem ajustada. Se persistir, usar guincho com ancoragem segura ou procurar outra rota. Não insistir a qualquer custo. Se a subida falhar, não tentar virar o veículo em uma subida íngreme; retornar de forma controlada pelo trajeto quando possível e reavaliar."
+    },
+    {
+      "id": "offroad-003",
+      "topic": "Descida íngreme e com barro",
+      "status": "CONFIRMADA",
+      "answer": "Usar reduzida e marcha adequada ao veículo, mantendo a transmissão engatada e aproveitando freio-motor, com freio de serviço de forma suave quando necessário. Não usar uma regra universal de '1ª reduzida': relações de transmissão, controles de descida e recomendações do fabricante variam. Evitar comandos bruscos. Se não houver margem de segurança, não iniciar a descida."
+    },
+    {
+      "id": "offroad-004",
+      "topic": "Travessia de água desconhecida",
+      "status": "CONFIRMADA",
+      "answer": "Não atravessar apenas por tentativa. Avaliar profundidade, correnteza, fundo quando isso puder ser feito com segurança, rota de entrada e saída e capacidade específica do veículo. Observar outro 4x4 atravessar fornece informação útil, mas não garante que outro veículo consiga. Se não for possível determinar que a travessia está dentro dos limites do veículo e do condutor, procurar outra rota. Em travessias, conhecer posição e vedação da admissão é essencial. Snorkel corretamente instalado e vedado eleva a captação de ar e reduz o risco de aspiração de água, mas não torna o veículo apto a qualquer profundidade e não substitui os demais limites do veículo."
+    },
+    {
+      "id": "offroad-005",
+      "topic": "Pressão dos pneus no off-road",
+      "status": "CONFIRMADA",
+      "answer": "Como referência ampla de uso off-road, podem existir configurações aproximadamente entre 25 e 8 psi, mas a faixa não é adequada integralmente a todo veículo. Considerar veículo, peso/carga, pneu, construção e tamanho, roda, terreno, velocidade e beadlock. Pressão excessivamente baixa aumenta risco de destalonamento e danos ao pneu/roda. Abaixo de aproximadamente 15 psi é ponto de atenção: beadlock passa a ser fortemente recomendado e ganha importância conforme a pressão diminui. Próximo de 8–10 psi, não recomendar sem avaliar beadlock e configuração. Para iniciante, pedir dados do conjunto antes de indicar pressão específica. Recalibrar adequadamente antes do uso rodoviário."
+    },
+    {
+      "id": "offroad-006",
+      "topic": "Bloqueio de diferencial",
+      "status": "CONFIRMADA",
+      "answer": "Bloqueio selecionável pode ser acionado antes de obstáculos com previsão de perda de tração, como lama, atoleiro, pedras, valetas e cruzamento de eixo. Evitar mantê-lo desnecessariamente em superfícies de alta aderência e evitar curvas fechadas com bloqueio 100% quando isso contrariar o sistema, pois aumenta esforços e dificulta a diferença de rotação das rodas. Identificar se o bloqueio é dianteiro, traseiro, central, selecionável ou automático antes de orientar."
+    },
+    {
+      "id": "offroad-007",
+      "topic": "Recuperação com guincho e árvore",
+      "status": "CONFIRMADA",
+      "answer": "Avaliar se a árvore é resistente e bem enraizada. Usar cinta própria de proteção da árvore e componentes dimensionados. Para linha dupla, prender patesca à cinta, passar a linha pela patesca e retornar a extremidade a ponto de recuperação adequado do veículo. Usar winch/recovery damper na linha conforme o equipamento. Manter pessoas desnecessárias afastadas. O veículo pode auxiliar com tração controlada pelas rodas quando seguro, sem trancos ou aceleração excessiva. Nunca enrolar a linha diretamente na árvore nem improvisar pontos de ancoragem; todos os componentes devem suportar as cargas da configuração."
+    },
+    {
+      "id": "offroad-009",
+      "topic": "Inclinação lateral",
+      "status": "CONFIRMADA",
+      "answer": "ATENÇÃO: existe risco de tombamento. Não fornecer um ângulo como 'seguro'. A estabilidade depende de entre-eixos, bitola, altura, centro de gravidade, suspensão, pneus, carga e terreno, e as condições podem mudar durante a passagem. Uma roda pode patinar e aprofundar barro/solo fofo, aumentando repentinamente a inclinação. Observar depressões no lado baixo, pedras/raízes/elevações no lado alto e possibilidade de o solo ceder. Manter cargas presas e baixas; peso no teto prejudica estabilidade. Ocupantes devem usar sistema de retenção adequado; harness de 4 pontos somente se apropriado e corretamente instalado. Especificação máxima do fabricante não é garantia de segurança na trilha."
+    },
+    {
+      "id": "offroad-010",
+      "topic": "Valeta e cruzamento de eixo",
+      "status": "CONFIRMADA",
+      "answer": "Avaliar profundidade, largura, inclinação e terreno. Escolher trajetória progressiva que preserve apoio e tração. Dependendo da geometria, pode-se posicionar o veículo para a dianteira atravessar primeiro e, após superar o obstáculo, retornar progressivamente ao traçado para o eixo traseiro atravessar. Em veículo com bloqueio traseiro 100% selecionável, ele pode ser acionado antes quando houver previsão de perda de tração traseira. Priorizar passagem lenta, progressiva e controlada quando houver cruzamento de eixo. Não transformar entrada diagonal em regra universal; considerar geometria, distância entre eixos, bitola, curso da suspensão e sistemas de tração."
+    },
+    {
+      "id": "offroad-011",
+      "topic": "Perda de tração no barro antes de atolar",
+      "status": "CONFIRMADA",
+      "answer": "Se o veículo parar de progredir, evitar acelerar continuamente no mesmo ponto. Se possível, recuar pelo próprio rastro até recuperar aderência, reavaliar a trajetória e fazer nova tentativa controlada, podendo usar um pouco mais de embalo quando terreno e segurança permitirem. Embalo não é patinação: o objetivo é aproveitar movimento, não aumentar indefinidamente a rotação das rodas. Se cada tentativa fizer o veículo afundar mais ou exigir progressivamente mais agressividade, parar e considerar recuperação ou outra trajetória."
+    },
+    {
+      "id": "offroad-012",
+      "topic": "Pedras grandes e degraus",
+      "status": "CONFIRMADA",
+      "answer": "Avaliar tamanho/formato, altura livre e componentes inferiores. Usar recursos de tração apropriados e passar devagar, progressivamente, observando a resposta do veículo. Quando a geometria permitir, atacar o obstáculo com a banda de rodagem, evitando contato desnecessário da lateral do pneu com bordas cortantes. Evitar velocidade e impacto como primeira estratégia. Observar diferenciais, cardãs, caixa de transferência, cárter, escapamento, estribos e demais pontos baixos. Spotter pode orientar se estiver em posição segura e visível. Regra: se para vencer um obstáculo técnico for necessário começar a substituir controle por impacto, pare e reavalie."
+    },
+    {
+      "id": "offroad-013",
+      "topic": "Temperatura do motor aumentando na trilha",
+      "status": "CONFIRMADA",
+      "answer": "Em uso severo, uma elevação de aproximadamente até 10 °C acima da temperatura habitual daquele veículo pode ocorrer; se continuar subindo ou ultrapassar significativamente essa variação, dar a devida atenção. Após água/barro, verificar quando seguro se as aletas do radiador estão obstruídas e limpar cuidadosamente se necessário. Se continuar aquecendo, parar em local seguro, retirar carga do motor e, como orientação conservadora, desligar e investigar vazamentos, nível visível, mangueiras, radiador e outros sinais. Não assumir que a ventoinha funciona com motor desligado em todos os veículos; seguir estratégia específica do fabricante. Nunca abrir tampa pressurizada do radiador/reservatório quente. Próximo ou acima de 120 °C é forte alerta e há possibilidade de dano, mas não afirmar automaticamente que houve dano; considerar motor, duração, perda de líquido e sintomas."
+    },
+    {
+      "id": "offroad-014",
+      "topic": "Motor apagou dentro da água",
+      "status": "CONFIRMADA",
+      "answer": "Retirar o veículo da água de forma segura e não tentar dar partida imediatamente se houver possibilidade de água na admissão/cilindros. Avaliar profundidade, posição da admissão, snorkel e sua vedação; verificar caixa do filtro, filtro e dutos. Escapamento submerso não prova sozinho água nos cilindros. Em gasolina, havendo suspeita, alguém com conhecimento e seguindo procedimento do motor pode remover velas e verificar/remover água antes de permitir tentativa normal de partida. Em diesel, aplicar o mesmo princípio de não comprimir água, mas não recomendar genericamente remover injetores: common-rail envolve alta pressão e procedimentos específicos; identificar motor e consultar procedimento adequado. Depois de eliminar a possibilidade de água, investigar pane elétrica, conectores/sensores molhados, combustível ou outra falha. Regra: na dúvida sobre calço hidráulico, não usar o motor de partida como ferramenta de diagnóstico."
+    }
+  ],
+  "pending": [
+    {
+      "id": "offroad-015",
+      "topic": "Quebra de semieixo/homocinética na trilha",
+      "status": "PENDENTE",
+      "note": "Retomar na próxima sessão."
+    },
+    {
+      "topic": "Diesel avançado",
+      "status": "PLANEJADO",
+      "note": "Criar bloco próprio posteriormente, validando experiência prática contra documentação técnica específica por motor/sistema."
+    }
+  ]
+}
